@@ -5,3 +5,4 @@ Desarrollado por:
 
 Angelo Goitia
 Santiago Rodríguez
+Jack Jimenes
