@@ -1,0 +1,25 @@
+# Rust & Soroban (Archivos de compilación y binarios)
+target/
+**/target/
+.soroban/
+**/*.rs.bk
+
+# Node & React (Dependencias y compilados de frontend)
+node_modules/
+dist/
+build/
+.next/
+
+# Variables de entorno y llaves privadas (¡NUNCA subir a GitHub!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos del sistema y del editor (VS Code, Windows)
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,10 @@
+[build]
+# Deshabilita compilación incremental para evitar OS Error 32 en Windows
+# (archivos .rcgu.o bloqueados por múltiples procesos concurrentes)
+incremental = false
+
+[profile.dev]
+incremental = false
+
+[profile.test]
+incremental = false
