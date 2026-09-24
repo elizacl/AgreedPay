@@ -1,5 +1,6 @@
 # Rust & Soroban (Archivos de compilación y binarios)
-/target/
+target/
+**/target/
 .soroban/
 **/*.rs.bk
 
