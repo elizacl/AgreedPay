@@ -26,7 +26,7 @@ A través de un contrato de escrow programable en Soroban, cada acuerdo de servi
 ### 1.3. Custodia Segura en SAC USDC (7 Decimales)
 La custodia financiera se ejecuta mediante el **Stellar Asset Contract (SAC)** del activo oficial **USDC** emitido en Stellar.
 * **Precisión Numérica:** USDC en Stellar opera formalmente con **7 posiciones decimales**. La unidad mínima contable en el ledger (stroop) equivale a:
-  $$\text{1 USDC} = 10,000,000 \text{ stroops} = 1 \times 10^7$$
+  $$\text{1 USDC} = 10{,}000{,}000\text{ stroops} = 10^7\text{ stroops}$$
 * **Representación Numérica:** Toda la aritmética on-chain se procesa en tipos enteros con signo de 128 bits (`i128`), garantizando cero pérdida por redondeo y previniendo desbordamientos aritméticos (*overflow/underflow*).
 * **Custodia Descentralizada:** El contrato `escrow_milestones.rs` retiene la titularidad transitoria de los tokens en su propio `Address` contractual; ningún intermediario ni administrador posee facultades para desviar fondos fuera de las transiciones de estado explícitamente autorizadas.
 
@@ -37,8 +37,8 @@ AgreedPay implementa un **protocolo de resolución algorítmica basado en un Age
 * **Disparador del Conflicto:** Si el cliente rechaza un entregable o abre formalmente una disputa, el hito entra en estado `Disputed`.
 * **Auditoría Técnica Objetiva:** El agente de arbitraje off-chain inspecciona el repositorio (vía GitHub API) y analiza los commits, pull requests, cobertura de pruebas y diffs contra los criterios de aceptación del SOW.
 * **Regla de Corte Funcional del 80%:**
-  * **Avance $\ge 80\%$ (Subsanación / Buena Fe):** El agente determina que existe un avance material sustantivo. Invoca on-chain `grant_revision_extension(milestone_id, 5_dias)`. El hito se traslada al estado `RevisionRequired`, otorgando al freelancer un período de gracia de **5 días calendario** para corregir observaciones sin penalización económica inmediata.
-  * **Avance $< 80\%$ (Incumplimiento Crítico):** El agente determina incumplimiento severo. Invoca on-chain `resolve_dispute(milestone_id, release: false)`. El contrato inteligente reembolsa de manera inmediata e irrevocable el **100% de los USDC bloqueados** para ese hito a la cuenta de la Empresa Contratante.
+  * **Avance ≥ 80% (Subsanación / Buena Fe):** El agente determina que existe un avance material sustantivo. Invoca on-chain `grant_revision_extension(milestone_id, 5_dias)`. El hito se traslada al estado `RevisionRequired`, otorgando al freelancer un período de gracia de **5 días calendario** para corregir observaciones sin penalización económica inmediata.
+  * **Avance < 80% (Incumplimiento Crítico):** El agente determina incumplimiento severo. Invoca on-chain `resolve_dispute(milestone_id, release: false)`. El contrato inteligente reembolsa de manera inmediata e irrevocable el **100% de los USDC bloqueados** para ese hito a la cuenta de la Empresa Contratante.
 
 ---
 
@@ -263,7 +263,7 @@ sequenceDiagram
 #### Fase 2: Ejecución y Carga de Entregable
 1. **Hash de Prueba Off-Chain:** Al culminar el trabajo del hito, el freelancer o su pipeline de CI/CD genera un hash SHA-256 representativo del entregable (por ejemplo, el commit hash de Git o el digest criptográfico del archivo compilado/zip).
 2. **Registro On-Chain:** El freelancer firma e invoca `submit_milestone(id: 1, proof_hash)`.
-3. **Arranque de Temporizador:** El contrato valida que el hito se encuentre en estado `Pending` o `RevisionRequired`, almacena el `proof_hash`, registra el timestamp actual del ledger (`env.ledger().timestamp()`) y cambia el estado a `Submitted`. A partir de este segundo se computa la ventana de inactividad de **14 días** ($1,209,600\text{ segundos}$).
+3. **Arranque de Temporizador:** El contrato valida que el hito se encuentre en estado `Pending` o `RevisionRequired`, almacena el `proof_hash`, registra el timestamp actual del ledger (`env.ledger().timestamp()`) y cambia el estado a `Submitted`. A partir de este segundo se computa la ventana de inactividad de **14 días** (1,209,600 segundos).
 
 #### Fase 3A: Liquidación Normal (Aprobación Cliente)
 1. **Validación:** El cliente verifica la conformidad técnica del entregable.
@@ -274,8 +274,10 @@ sequenceDiagram
 #### Fase 3B: Cláusula Anti-Lockup (Inactividad > 14 días)
 1. **Problema Mitigado:** Si el cliente desaparece, pierde acceso a su billetera o se niega a responder tras recibir el entregable, los fondos del freelancer quedarían bloqueados indefinidamente.
 2. **Ejecución Algorítmica:** Pasados los 14 días desde `submitted_at`, el freelancer invoca `claim_timeout(id: 1)`.
-3. **Verificación Estricta:** El contrato evalúa:
-   $$\text{env.ledger().timestamp()} \ge \text{milestone.submitted\_at} + 1,209,600$$
+3. **Verificación Estricta:** El contrato evalúa algorítmicamente:
+   ```rust
+   env.ledger().timestamp() >= milestone.submitted_at + 1_209_600
+   ```
 4. **Auto-Liberación:** Si la condición temporal se cumple, el contrato transfiere los fondos correspondientes al freelancer sin requerir la firma del cliente, previniendo el secuestro de liquidez.
 
 #### Fase 3C: Arbitraje por Agente de IA (Umbral de Avance)
@@ -283,8 +285,8 @@ sequenceDiagram
 2. **Detección por Eventos:** El contrato emite el evento `(symbol_short!("disputed"), milestone_id)`. El worker off-chain del Agente de IA detecta el evento mediante suscripción RPC.
 3. **Auditoría Técnica:** El agente clona el repositorio, extrae los diffs de código y ejecuta un análisis semántico y funcional asistido por LLM confrontando el entregable contra el SOW registrado.
 4. **Bifurcación por Criterio Objetivo:**
-   - **Caso Avance $\ge 80\%$ (Subsanación):** Se otorga oportunidad de rectificación. El agente ejecuta `grant_revision_extension(id: 1, 432_000)` (+5 días). El hito pasa a `RevisionRequired`. El freelancer tiene 5 días para publicar correcciones y re-enviar el entregable.
-   - **Caso Avance $< 80\%$ (Incumplimiento):** Se concluye falla grave del proveedor. El agente ejecuta `resolve_dispute(id: 1, release: false)`. El contrato transfiere el 100% de los fondos de ese hito de vuelta al cliente y marca el estado como `Refunded`.
+   - **Caso Avance ≥ 80% (Subsanación):** Se otorga oportunidad de rectificación. El agente ejecuta `grant_revision_extension(id: 1, 432_000)` (+5 días). El hito pasa a `RevisionRequired`. El freelancer tiene 5 días para publicar correcciones y re-enviar el entregable.
+   - **Caso Avance < 80% (Incumplimiento):** Se concluye falla grave del proveedor. El agente ejecuta `resolve_dispute(id: 1, release: false)`. El contrato transfiere el 100% de los fondos de ese hito de vuelta al cliente y marca el estado como `Refunded`.
 
 ---
 
@@ -347,13 +349,13 @@ stateDiagram-v2
 | Estado Origen | Función Disparadora | Invocador Autorizado | Precondición (Guarda) | Estado Destino | Acción Financiera (SAC USDC) |
 |---|---|---|---|---|---|
 | `(None)` | `deposit_and_create_milestones` | Cliente | Saldo suficiente en cuenta cliente | `Pending` | Transferencia `Cliente -> Contrato` (Monto Total) |
-| `Pending` | `submit_milestone` | Freelancer | Hito en turno; `proof_hash` $\ne 0$ | `Submitted` | Ninguna. Se inicia temporizador de 14 días. |
+| `Pending` | `submit_milestone` | Freelancer | Hito en turno; `proof_hash != 0` | `Submitted` | Ninguna. Se inicia temporizador de 14 días. |
 | `Submitted` | `approve_milestone` | Cliente | Hito en estado `Submitted` | `Approved` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
-| `Submitted` | `claim_timeout` | Freelancer | Ledger timestamp $\ge \text{submitted\_at} + 14\text{d}$ | `Approved` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
-| `Submitted` | `dispute_milestone` | Cliente | Ledger timestamp $< \text{submitted\_at} + 14\text{d}$ | `Disputed` | Ninguna. Se congelan los temporizadores. |
-| `Disputed` | `grant_revision_extension` | Agente IA (Árbitro) | Evaluación técnica LLM $\ge 80\%$ de avance | `RevisionRequired` | Ninguna. Extiende plazo por 5 días adicionales. |
-| `RevisionRequired` | `submit_milestone` | Freelancer | Ledger timestamp $\le \text{extension\_deadline}$ | `Submitted` | Ninguna. Se reinicia ventana de revisión. |
-| `Disputed` | `resolve_dispute(false)` | Agente IA (Árbitro) | Evaluación técnica LLM $< 80\%$ de avance | `Refunded` | Transferencia `Contrato -> Cliente` (100% Monto Hito) |
+| `Submitted` | `claim_timeout` | Freelancer | `ledger_timestamp >= submitted_at + 14d` | `Approved` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
+| `Submitted` | `dispute_milestone` | Cliente | `ledger_timestamp < submitted_at + 14d` | `Disputed` | Ninguna. Se congelan los temporizadores. |
+| `Disputed` | `grant_revision_extension` | Agente IA (Árbitro) | Score LLM ≥ 80% de avance | `RevisionRequired` | Ninguna. Extiende plazo por 5 días adicionales. |
+| `RevisionRequired` | `submit_milestone` | Freelancer | `ledger_timestamp <= extension_deadline` | `Submitted` | Ninguna. Se reinicia ventana de revisión. |
+| `Disputed` | `resolve_dispute(false)` | Agente IA (Árbitro) | Score LLM < 80% de avance | `Refunded` | Transferencia `Contrato -> Cliente` (100% Monto Hito) |
 | `Disputed` | `resolve_dispute(true)` | Agente IA (Árbitro) | Subsanación verificada conforme por IA | `Approved` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
 
 ---
@@ -451,7 +453,7 @@ pub fn deposit_and_create_milestones(
 * **Validaciones:**
   - Verifica que el contrato no haya sido inicializado previamente (`DataKey::Config`).
   - `client.require_auth()` es obligatorio.
-  - Comprueba que la lista `milestones_data` no esté vacía y que cada monto sea $> 0$.
+  - Comprueba que la lista `milestones_data` no esté vacía y que cada monto sea > 0.
 * **Efectos:**
   - Suma el monto total de todos los hitos.
   - Ejecuta `token::Client::new(&env, &token).transfer(&client, &env.current_contract_address(), &total_amount)`.
@@ -510,7 +512,7 @@ pub fn claim_timeout(
   - Transfiere el monto al freelancer mediante `token::Client`.
   - Emite evento `(symbol_short!("timeout"), milestone_id)`.
 
-#### 5. Prórroga de Subsanación (Plan B IA: Avance $\ge 80\%$)
+#### 5. Prórroga de Subsanación (Plan B IA: Avance ≥ 80%)
 ```rust
 /// Otorga un período de gracia de 5 días para subsanar observaciones técnicas.
 pub fn grant_revision_extension(
@@ -527,7 +529,7 @@ pub fn grant_revision_extension(
   - Conmuta estado a `MilestoneStatus::RevisionRequired`.
   - Emite evento `(symbol_short!("extended"), milestone_id, extension_deadline)`.
 
-#### 6. Resolución Definitiva de Disputa (Plan B IA: Avance $< 80\%$)
+#### 6. Resolución Definitiva de Disputa (Plan B IA: Avance < 80%)
 ```rust
 /// Resuelve la disputa liquidando los fondos al freelancer o reembolsando al cliente.
 pub fn resolve_dispute(
@@ -540,8 +542,8 @@ pub fn resolve_dispute(
   - `arbiter.require_auth()`.
   - El hito debe estar en estado `Disputed`.
 * **Efectos:**
-  - Si `release_to_freelancer == true`: Estado $\rightarrow$ `Approved`, transfiere fondos al Freelancer.
-  - Si `release_to_freelancer == false` (Regla $< 80\%$): Estado $\rightarrow$ `Refunded`, transfiere el 100% del monto del hito de vuelta a `config.client`.
+  - Si `release_to_freelancer == true`: Estado → `Approved`, transfiere fondos al Freelancer.
+  - Si `release_to_freelancer == false` (Regla < 80%): Estado → `Refunded`, transfiere el 100% del monto del hito de vuelta a `config.client`.
   - Emite evento `(symbol_short!("resolved"), milestone_id, release_to_freelancer)`.
 
 ---
@@ -629,11 +631,11 @@ CREATE POLICY "Disputas visibles para todos" ON public.disputes FOR SELECT USING
 3. **Pipeline de Evaluación Técnica:**
    - Valida la integridad del hash entregado contra el commit del branch.
    - Ejecuta un análisis estático de código y suites de pruebas automatizadas en un sandbox aislado.
-   - Envía el diff semántico y los criterios del SOW a un modelo LLM con temperatura $0.0$ especializado en auditoría de software.
+   - Envía el diff semántico y los criterios del SOW a un modelo LLM con temperatura 0.0 especializado en auditoría de software.
    - El modelo emite una métrica cuantitativa de **Completitud Funcional (0% a 100%)**.
 4. **Firma y Ejecución Transaccional:**
-   - Si $\text{Score} \ge 80\%$: Construye y firma con la llave secreta del `arbiter` una invocación a `grant_revision_extension(milestone_id, 432000)`.
-   - Si $\text{Score} < 80\%$: Construye y firma una invocación a `resolve_dispute(milestone_id, false)`.
+   - Si Score ≥ 80%: Construye y firma con la llave secreta del `arbiter` una invocación a `grant_revision_extension(milestone_id, 432000)`.
+   - Si Score < 80%: Construye y firma una invocación a `resolve_dispute(milestone_id, false)`.
    - Registra el hash de la transacción y el reporte en Supabase.
 
 ---
@@ -647,7 +649,7 @@ CREATE POLICY "Disputas visibles para todos" ON public.disputes FOR SELECT USING
 | **Reentrancy Attack** | Alto | El contrato implementa el patrón estricto **Checks-Effects-Interactions (CEI)**. Se actualiza el estado interno del hito antes de invocar cualquier llamada externa al cliente de SAC USDC. |
 | **Impersonación de Identidad** | Crítico | Se aplica `address.require_auth()` nativo de Soroban en cada endpoint. No se admiten transferencias sin firma criptográfica válida del titular correspondiente. |
 | **State Expiration (Archivado TTL)** | Medio | Las entradas en `PersistentStorage` renuevan automáticamente su Time-To-Live (`extend_ttl`) en cada transacción de hito, impidiendo la inaccesibilidad de fondos por expiración del ledger. |
-| **Pérdida de Precisión Aritmética** | Alto | Todos los balances y cálculos operan en números enteros `i128` escalados con 7 decimales ($10^7$). No se emplean tipos de punto flotante. |
+| **Pérdida de Precisión Aritmética** | Alto | Todos los balances y cálculos operan en números enteros `i128` escalados con 7 decimales (10^7). No se emplean tipos de punto flotante. |
 | **Denegación de Servicio por Inactividad** | Medio | La función `claim_timeout` garantiza que la negligencia o desaparición del cliente no bloquee los activos del freelancer más allá de 14 días. |
 | **Falla o Compromiso del Oráculo IA** | Alto | La clave del `arbiter` se aísla en un entorno KMS/HSM con rotación controlada. En revisiones avanzadas, se incorpora un timelock de fallback donde un consejo multisig puede intervenir si el oráculo no responde en 72 horas. |
 
