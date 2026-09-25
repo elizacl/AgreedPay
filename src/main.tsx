@@ -1,8 +1,8 @@
+import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { CavosProvider, CavosConfig } from '@cavos/kit/react';
 import App from './App';
-import './index.css';
 
 // Configuración modular de Cavos para Stellar Testnet
 const cavosConfig: CavosConfig = {
