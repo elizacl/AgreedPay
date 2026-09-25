@@ -31,7 +31,7 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
   const handleApproveClick = async () => {
     setIsApproving(true);
     try {
-      await onApprove(3);
+      await onApprove(2);
       setTimeout(() => {
         setIsApproving(false);
         setIsApprovedSuccess(true);
@@ -263,7 +263,7 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
 
                   <button 
                     type="button"
-                    onClick={onOpenDisputeModal || (() => onDispute(3))}
+                    onClick={onOpenDisputeModal || (() => onDispute(2))}
                     className="w-full sm:w-auto py-3 px-5 rounded-xl bg-surface-container-lowest hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-semibold transition-all shadow-sm flex items-center justify-center gap-2 border border-slate-200"
                   >
                     <span className="material-symbols-outlined text-base text-primary" style={{ color: '#ea580c' }}>warning</span>
@@ -274,7 +274,7 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
                 <>
                   <button 
                     type="button"
-                    onClick={() => alert('Notificación de entrega enviada a la contraparte con hash registrado.')}
+                    onClick={() => onSubmitWork && onSubmitWork(2)}
                     className="w-full sm:flex-1 py-3 px-6 rounded-xl font-label-md text-label-md font-bold shadow-md flex items-center justify-center gap-2 transition-all text-white"
                     style={{ backgroundColor: '#ea580c' }}
                   >
@@ -283,7 +283,7 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
                   </button>
                   <button 
                     type="button"
-                    onClick={() => onClaimTimeout && onClaimTimeout(3)}
+                    onClick={() => onClaimTimeout && onClaimTimeout(2)}
                     className="w-full sm:w-auto py-3 px-5 rounded-xl bg-surface-container-lowest hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md font-semibold transition-all shadow-sm flex items-center justify-center gap-2 border border-slate-200"
                   >
                     <span className="material-symbols-outlined text-base text-primary" style={{ color: '#ea580c' }}>timer</span>

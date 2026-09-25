@@ -1,13 +1,14 @@
 import { useState, useCallback } from 'react';
 import { UserSession, AuthMethod } from '../types/ui';
+import { connectCavosWallet, disconnectCavosWallet } from '../lib/cavos';
+import { connectFreighter } from '../lib/soroban';
 
 export const useCavosAuth = () => {
   const [session, setSession] = useState<UserSession>({
-    isConnected: true,
-    address: 'GD43REI5DWYIHVIWO2XHWODU4Y4K4PXC3IV53Y6M5EEF53I4AFUL3QSR',
-    authMethod: 'cavos',
-    email: 'empresa@fintechlatam.com',
-    isGasless: true,
+    isConnected: false,
+    address: null,
+    authMethod: null,
+    isGasless: false,
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -17,9 +18,8 @@ export const useCavosAuth = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simula / ejecuta la conexión con el SDK de Cavos Kit
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      const address = "GD43REI5DWYIHVIWO2XHWODU4Y4K4PXC3IV53Y6M5EEF53I4AFUL3QSR";
+      const wallet = await connectCavosWallet(userId || email || 'agreedpay-client-user', email);
+      const address = wallet.address;
       setSession({
         isConnected: true,
         address,
@@ -40,8 +40,7 @@ export const useCavosAuth = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      const address = "GA6MBBMLUQQ2KHAESUEAE67WMCMI64AXRVJGAJRCF2EQDFGVKE55MMRU";
+      const address = await connectFreighter();
       setSession({
         isConnected: true,
         address,
@@ -58,6 +57,7 @@ export const useCavosAuth = () => {
   }, []);
 
   const logout = useCallback(() => {
+    disconnectCavosWallet();
     setSession({
       isConnected: false,
       address: null,

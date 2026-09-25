@@ -8,13 +8,15 @@ import { DeliverablesPanel } from './components/dashboard/DeliverablesPanel';
 import { ActiveContractsView } from './components/dashboard/ActiveContractsView';
 import { AuditLogsView } from './components/dashboard/AuditLogsView';
 import { CavosAuthModal } from './components/modals/CavosAuthModal';
-import { CreateAgreementModal } from './components/modals/CreateAgreementModal';
+import { CreateAgreementModal, CreateAgreementInput } from './components/modals/CreateAgreementModal';
 import { DisputeModal } from './components/modals/DisputeModal';
 import { Role, AuthMethod } from './types/ui';
 import { Milestone } from './types/contract';
 import { useCavosAuth } from './hooks/useCavosAuth';
-import { useEscrowContract } from './hooks/useEscrowContract';
-import { useDeposit, NewAgreementParams } from './hooks/useDeposit';
+import { useDeposit } from './hooks/useDeposit';
+import { useSubmitMilestone } from './hooks/useSubmitMilestone';
+import { useApproveMilestone } from './hooks/useApproveMilestone';
+import { useClaimTimeout } from './hooks/useClaimTimeout';
 
 export const App: React.FC = () => {
   const [role, setRole] = useState<Role>('client');
@@ -25,8 +27,10 @@ export const App: React.FC = () => {
 
   // Auth & Contract Hooks
   const { session, loginWithCavos, loginWithFreighter, logout } = useCavosAuth();
-  const { approveMilestone, claimTimeout, submitMilestoneProof } = useEscrowContract();
-  const { depositAndCreateMilestones } = useDeposit();
+  const { execute: deposit } = useDeposit();
+  const { execute: submitMilestone } = useSubmitMilestone();
+  const { execute: approveMilestone } = useApproveMilestone();
+  const { execute: claimTimeout } = useClaimTimeout();
 
   // Active contract milestones ($85,000 USDC)
   const [milestones, setMilestones] = useState<Milestone[]>([
@@ -81,8 +85,22 @@ export const App: React.FC = () => {
     }
   };
 
+  const getSigner = () => {
+    if (!session.isConnected || !session.address || !session.authMethod) {
+      throw new Error('Conecta Cavos o Freighter antes de firmar una transacción.');
+    }
+
+    return { signerAddress: session.address, walletType: session.authMethod };
+  };
+
+  const createDescriptionHash = async (description: string): Promise<string> => {
+    const payload = new TextEncoder().encode(description);
+    const digest = await crypto.subtle.digest('SHA-256', payload);
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  };
+
   const handleApproveMilestone = async (id: number) => {
-    await approveMilestone(id);
+    await approveMilestone({ milestoneId: id, ...getSigner() });
     setMilestones((prev) =>
       prev.map((m) => (m.id === id ? { ...m, status: 'Approved' } : m))
     );
@@ -93,15 +111,12 @@ export const App: React.FC = () => {
   };
 
   const handleConfirmDispute = (reason: string) => {
-    setMilestones((prev) =>
-      prev.map((m) => (m.id === 3 ? { ...m, status: 'Disputed' } : m))
-    );
-    alert(`Disputa formal registrada en Soroban por: "${reason}". Notificación enviada al árbitro y a la contraparte.`);
+    alert(`Evidencia de disputa registrada: "${reason}". El contrato desplegado no expone dispute_milestone; la apertura on-chain requiere una nueva versión del contrato.`);
   };
 
   const handleSubmitWork = async (id: number) => {
-    const proofHash = '0x' + Math.random().toString(16).substring(2, 66);
-    await submitMilestoneProof(id, proofHash);
+    const proofHash = await createDescriptionHash(`deliverable:${id}:${new Date().toISOString()}`);
+    await submitMilestone({ milestoneId: id, proofHash, ...getSigner() });
     setMilestones((prev) =>
       prev.map((m) =>
         m.id === id ? { ...m, status: 'Submitted', proofHash } : m
@@ -110,14 +125,18 @@ export const App: React.FC = () => {
   };
 
   const handleClaimTimeout = async (id: number) => {
-    await claimTimeout(id);
+    await claimTimeout({ milestoneId: id, ...getSigner() });
     setMilestones((prev) =>
       prev.map((m) => (m.id === id ? { ...m, status: 'Approved' } : m))
     );
   };
 
-  const handleCreateAgreement = async (data: NewAgreementParams) => {
-    await depositAndCreateMilestones(data);
+  const handleCreateAgreement = async (data: CreateAgreementInput) => {
+    const descriptionHash = await createDescriptionHash(`${data.title}:${data.freelancerAddress}`);
+    await deposit({
+      milestones: [{ amount: data.totalAmount, descriptionHash }],
+      ...getSigner(),
+    });
   };
 
   return (

@@ -46,7 +46,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({
           <div className="flex items-center gap-2" style={{ color: '#ea580c' }}>
             <span className="material-symbols-outlined text-2xl">gavel</span>
             <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
-              Iniciar Procedimiento de Disputa
+              Registrar Evidencia de Disputa
             </h3>
           </div>
           <button 
@@ -59,7 +59,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({
         </div>
 
         <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-          La activación de este procedimiento congelará el <strong>{milestoneTitle} (${amount.toLocaleString()} USDC)</strong> e invocará al Tribunal Arbitral Stellar B2B #12 y al oráculo IA con un plazo de resolución de 7 días hábiles.
+          El contrato desplegado aún no expone una función para abrir disputas on-chain. Esta acción registra la evidencia de <strong>{milestoneTitle} (${amount.toLocaleString()} USDC)</strong> para su revisión off-chain.
         </p>
 
         <div className="flex flex-col gap-1.5">
@@ -82,7 +82,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({
         <div className="p-3 rounded-xl bg-surface-container-low flex items-start gap-2.5 border border-slate-200">
           <span className="material-symbols-outlined text-base text-tertiary mt-0.5">smart_toy</span>
           <p className="text-xs text-on-surface-variant leading-relaxed">
-            El oráculo IA de AgreedPay auditará automáticamente la regla de corte al 80%. Si el entregable supera el 80% funcional, se habilitará una prórroga de 5 días para subsanar.
+            El árbitro puede evaluar la evidencia off-chain. Para cambiar el estado a <code>Disputed</code> desde la interfaz se requiere desplegar una nueva versión del contrato.
           </p>
         </div>
 
@@ -104,10 +104,10 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({
             {isSubmitting ? (
               <>
                 <span className="material-symbols-outlined text-sm animate-spin">refresh</span>
-                <span>Registrando en Soroban...</span>
+                <span>Registrando evidencia...</span>
               </>
             ) : (
-              <span>Confirmar Escalamiento</span>
+              <span>Registrar Evidencia</span>
             )}
           </button>
         </div>

@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 
+export interface CreateAgreementInput {
+  title: string;
+  freelancerAddress: string;
+  totalAmount: number;
+  progressThreshold: number;
+  antiLockup: boolean;
+}
+
 interface CreateAgreementModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (agreement: any) => void;
+  onCreate: (agreement: CreateAgreementInput) => Promise<void>;
 }
 
 export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
@@ -14,33 +22,37 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
   const [projectName, setProjectName] = useState('Desarrollo Web SaaS & Plataforma Mobile');
   const [counterparty, setCounterparty] = useState('freelancer@acmeventure.dev');
   const [amount, setAmount] = useState('85,000.00');
-  const [threshold, setThreshold] = useState(80);
+  const threshold = 80;
   const [antiLockup, setAntiLockup] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccess(true);
-      onCreate({
+    try {
+      await onCreate({
         title: projectName,
         freelancerAddress: counterparty,
         totalAmount: parseFloat(amount.replace(/,/g, '')) || 85000,
         progressThreshold: threshold,
         antiLockup,
       });
-
+      setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
         onClose();
       }, 1200);
-    }, 1500);
+    } catch (submissionError: any) {
+      setError(submissionError?.message || 'No se pudo enviar la transacción.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -76,11 +88,11 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">
-                  Configurar Contrato Inteligente de Custodia B2B
+                  Fondear Contrato de Custodia B2B
                 </h2>
               </div>
               <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                Creación de Escrow para desarrollo y servicios profesionales en Soroban (Stellar) con liquidación automatizada por oráculo y verificación de código.
+                Fondea el escrow ya configurado en Soroban (Stellar). Cliente, contraparte y umbral se fijan al desplegar el contrato.
               </p>
             </div>
           </div>
@@ -96,6 +108,11 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
 
         {/* FORM */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-space-md">
+          {error && (
+            <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          )}
           {/* Campo 1: Nombre del Proyecto */}
           <div className="flex flex-col gap-1.5">
             <label className="font-label-md text-label-md text-on-surface flex items-center justify-between" htmlFor="projectName">
@@ -124,7 +141,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <label className="font-label-md text-label-md text-on-surface" htmlFor="counterpartyInput">
-                Contraparte B2B (Freelancer / Agencia Receptora de Fondos)
+                Referencia de contraparte (incluida en el hash del hito)
               </label>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-sm text-label-sm">
                 <span className="material-symbols-outlined text-xs fill-1">verified</span>
@@ -202,12 +219,12 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
               <div className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-primary text-base fill-1">neurology</span>
                 <span className="font-label-md text-label-md text-on-surface font-semibold">
-                  Umbral de Verificación por Oráculo IA (progress_threshold)
+                  Umbral configurado en el contrato (progress_threshold)
                 </span>
               </div>
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-code-sm text-code-sm font-bold">
                 <span>{threshold}%</span>
-                <span className="font-label-sm text-label-sm font-normal text-on-primary-fixed-variant">Recomendado</span>
+                <span className="font-label-sm text-label-sm font-normal text-on-primary-fixed-variant">Fijado al desplegar</span>
               </div>
             </div>
 
@@ -220,7 +237,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
                   max="95"
                   step="1"
                   value={threshold}
-                  onChange={(e) => setThreshold(Number(e.target.value))}
+                  disabled
                   className="w-full h-2 rounded-lg appearance-none cursor-pointer focus:outline-none"
                   style={{
                     accentColor: 'rgb(234, 88, 12)',
@@ -238,7 +255,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
             </div>
 
             <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed pt-1">
-              El oráculo Soroban comparará commits en GitHub, cobertura de tests unitarios y entregables en staging contra los requerimientos del contrato. Si la coincidencia supera el <strong className="text-on-surface font-semibold">{threshold}%</strong>, el hito queda pre-aprobado.
+              El contrato desplegado usa un umbral de <strong className="text-on-surface font-semibold">{threshold}%</strong>. Para modificarlo se debe desplegar una nueva configuración de escrow; el fondeo no puede cambiarlo.
             </p>
           </div>
 
