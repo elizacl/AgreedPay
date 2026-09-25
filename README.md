@@ -118,8 +118,105 @@ cargo scout-audit -v
 
 ---
 
+---
+
+## ⚡ Capa Web3 Core & Abstracción de Cuentas (SDK & Hooks)
+
+AgreedPay implementa una arquitectura Web3 de última generación diseñada para eliminar la fricción de incorporación (onboarding) en empresas e inversionistas tradicionales:
+
+### 1. Autenticación y Transacciones sin Gas (Gasless Escrow) con Cavos Kit
+A través de `@cavos/kit` (`src/lib/cavos.ts`), AgreedPay ofrece una experiencia **Frictionless**:
+* **Onboarding Instantáneo:** Inicio de sesión con Google / Apple / Passkeys (WebAuthn) sin necesidad de gestionar frases semilla (`seed phrases`).
+* **Gasless Escrow (0 XLM Requerido):** Las empresas operan exclusivamente en **USDC**. El `StellarRelayer` de Cavos patrocina las comisiones de red (`fee-bump`) y el consumo de recursos (CPU, memoria y escrituras en ledger).
+* **Patrocinio de Reservas:** Las trustlines para USDC son patrocinadas on-chain (`beginSponsoringFutureReserves`), permitiendo operar a cuentas con saldo de `0 XLM`.
+* **Firma Transparente de `require_auth()`:** Los métodos `executeGaslessContractCall` y `signGaslessXdr` firman de forma transparente las autorizaciones `SorobanAuthorizationEntry` que exige el contrato inteligente.
+
+```typescript
+import { connectCavosWallet, ensureGaslessUsdcTrustline } from "@/lib/cavos";
+
+// 1. Conectar sin requerir XLM ni extensiones
+const wallet = await connectCavosWallet("cliente@empresa.com");
+
+// 2. Garantizar trustline USDC patrocinada por el Relayer
+await ensureGaslessUsdcTrustline();
+```
+
+---
+
+### 2. Soporte Dual de Billeteras (Freighter & Stellar Wallets Kit)
+Para usuarios Web3 nativos y desarrolladores Web3, AgreedPay mantiene soporte directo mediante `@stellar/freighter-api` y `@creit-tech/stellar-wallets-kit` (`src/lib/soroban.ts`):
+
+```typescript
+import { connectWallet, signTransactionWithWallet } from "@/lib/soroban";
+
+// Conectar mediante modal unificado o Freighter directo
+const { address, walletType } = await connectWallet("freighter"); // o 'stellar-wallets-kit' | 'cavos'
+```
+
+---
+
+### 3. Orquestación Soroban RPC & Lectura con `getLedgerEntries`
+En `src/lib/soroban.ts` se implementa el ciclo completo de orquestación y mitigación defensiva de errores:
+
+* **Mitigación `tx_bad_seq`:** Re-consulta fresca de secuencia con `getAccount()` antes de cada armado.
+* **Mitigación `tx_too_late`:** Timeout defensivo de 180 segundos en `TransactionBuilder`.
+* **Ciclo de Invocación:** `simulateTransaction()` ➔ `assembleTransaction()` ➔ Firma ➔ `sendTransaction()` ➔ Polling con `pollTransaction()` hasta `SUCCESS`.
+* **Lectura Directa sin Horizon (`getLedgerEntries`):**
+  * `getContractConfig()`: Consulta la configuración (`ProjectConfig`) del almacenamiento de instancia.
+  * `getMilestoneCount()`: Consulta el total de hitos registrados.
+  * `getMilestone(id)` & `getAllMilestones()`: Consulta eficiente en un solo lote (batch) de los hitos desde el almacenamiento persistente.
+  * `getUsdcBalance(address)`: Lectura del balance SAC USDC con precisión garantizada de 7 decimales (`BigInt`).
+
+---
+
+### 4. Hooks Reactivos para el Frontend (`src/hooks/`)
+
+Todos los hooks exportados en `src/hooks/index.ts` exponen `{ execute, isLoading, isSuccess, isError, error, txHash, ledger, reset }` y soportan de forma transparente tanto Cavos (Gasless) como Freighter:
+
+| Hook | Archivo | Acción On-Chain |
+| :--- | :--- | :--- |
+| `useDeposit` | [`src/hooks/useDeposit.ts`](src/hooks/useDeposit.ts) | Bloquea USDC y divide el acuerdo en hitos con `progress_threshold` (default 80%). |
+| `useSubmitMilestone` | [`src/hooks/useSubmitMilestone.ts`](src/hooks/useSubmitMilestone.ts) | El freelancer envía el hash SHA-256 del entregable on-chain. |
+| `useApproveMilestone` | [`src/hooks/useApproveMilestone.ts`](src/hooks/useApproveMilestone.ts) | El cliente aprueba y libera el 100% del pago en USDC. |
+| `useClaimTimeout` | [`src/hooks/useClaimTimeout.ts`](src/hooks/useClaimTimeout.ts) | **Anti-Lockup:** Reclamo de fondos tras 14 días de inactividad del cliente. |
+| `useGrantRevisionExtension` | [`src/hooks/useGrantRevisionExtension.ts`](src/hooks/useGrantRevisionExtension.ts) | Prórroga de 5 días otorgada por el Agente IA/árbitro (`RevisionRequired`). |
+| `useEscrowContractState` | [`src/hooks/useEscrowContractState.ts`](src/hooks/useEscrowContractState.ts) | Lectura reactiva del contrato, lista de hitos y saldos bloqueados con auto-polling. |
+
+#### Ejemplo de uso en componente React:
+```tsx
+import { useDeposit, useEscrowContractState } from "@/hooks";
+
+export function AgreementView({ contractId, userAddress }) {
+  const { state, lockedBalance, isLoading: isReading } = useEscrowContractState({ contractId });
+  const { execute: deposit, isLoading: isDepositing, txHash } = useDeposit();
+
+  const handleCreateAndFund = async () => {
+    await deposit({
+      milestones: [
+        { amount: "1500", descriptionHash: "sha256_hito_1" },
+        { amount: "1500", descriptionHash: "sha256_hito_2" },
+      ],
+      signerAddress: userAddress,
+      walletType: "cavos", // ← Transacción patrocinada sin gas
+    });
+  };
+
+  return (
+    <div>
+      <h3>Total en Custodia: {lockedBalance?.formatted} USDC</h3>
+      <button onClick={handleCreateAndFund} disabled={isDepositing}>
+        {isDepositing ? "Procesando depósito sin gas..." : "Fondear Contrato"}
+      </button>
+    </div>
+  );
+}
+```
+
+---
+
 ## 📚 Documentación Técnica Adicional
 
 - [Diagramas de Arquitectura y Flujos (docs/architecture.md)](docs/architecture.md)
 - [Registro de Despliegue en Testnet (DEPLOYMENT.md)](DEPLOYMENT.md)
 - [Reporte Oficial de Auditoría Scout (docs/audit_report.md)](docs/audit_report.md)
+
