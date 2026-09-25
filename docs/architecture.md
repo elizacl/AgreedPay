@@ -1,6 +1,6 @@
 # AgreedPay: Especificación de Arquitectura de Software y Protocolo On-Chain
 **Checkpoint Técnico Intermedio: Documento Maestro de Arquitectura**  
-**Versión:** 1.1.0  
+**Versión:** 1.2.0
 **Ecosistema:** Stellar Network & Soroban Smart Contracts (`#![no_std]`)  
 **Activo de Custodia:** SAC USDC (Stellar Asset Contract - 7 Decimales)  
 **Tesis:** Tokenización RWA (Real World Assets) de Contratos Comerciales de Servicios y Arbitraje de IA  
@@ -32,13 +32,19 @@ La custodia de fondos opera a través del **Stellar Asset Contract (SAC)** ofici
 
 ### 1.4. Protocolo de Arbitraje y Resolución de Disputas Asistido por IA
 A diferencia de los esquemas tradicionales que dependen de juzgados o comités humanos lentos y costosos, AgreedPay implementa un **mecanismo de arbitraje descentralizado mediante un agente de IA**:
-* **Apertura de Disputa:** Si el cliente detecta discrepancias en el entregable, activa el estado `Disputed`.
+* **Apertura de Disputa:** el contrato desplegado no expone actualmente `dispute_milestone`. La UI puede registrar evidencia off-chain, pero una apertura on-chain requiere desplegar una nueva versión del contrato que añada ese método.
 * **Auditoría Técnica Objetiva:** El agente de arbitraje off-chain inspecciona el repositorio (vía GitHub API) y analiza los commits, pull requests, cobertura de pruebas y diffs contra los criterios de aceptación del SOW.
 * **Regla de Corte Funcional del 80%:**
   * **Avance Funcional ≥ 80% (Período de Subsanación):** Se presume buena fe y progreso sustancial. El agente invoca `grant_revision_extension(milestone_id, 5_dias)` en el contrato. El hito pasa a `RevisionRequired`, otorgando al desarrollador una prórroga de **5 días calendario** para corregir observaciones técnicas sin penalización financiera.
   * **Avance Funcional < 80% (Incumplimiento Crítico):** Se determina incumplimiento grave del servicio. El agente invoca `resolve_dispute(milestone_id, release: false)`. El contrato reembolsa de forma inmediata e irrevocable el **100% de los fondos bloqueados** para ese hito a la cuenta del cliente contratante.
 
 ---
+
+### 1.5. Estado verificable del contrato desplegado
+
+La fuente de verdad de la versión desplegada es `contracts/escrow_milestones/src/lib.rs`. Su ABI contiene `__constructor`, `deposit_and_create_milestones`, `submit_milestone`, `approve_milestone`, `claim_timeout`, `grant_revision_extension` y `resolve_dispute`.
+
+No contiene `dispute_milestone` ni publica eventos. Los diagramas de arbitraje que muestran una transición automática a `Disputed` describen el diseño objetivo y no deben presentarse como funcionalidad de la versión desplegada. El frontend solo envía transacciones de los métodos existentes.
 
 ## 2. Topología del Sistema y Arquitectura por Capas
 
@@ -51,22 +57,22 @@ flowchart LR
     %% CAPA 1: USUARIOS Y BILLETERAS
     subgraph L1 ["Capa de Usuarios & Billeteras"]
         direction TB
-        ClientUser["Empresa Contratante<br/>(Freighter Wallet)"]
-        FreelancerUser["Desarrollador LatAm<br/>(Freighter Wallet)"]
+        ClientUser["Empresa Contratante<br/>(Cavos: Google/Passkey o Freighter)"]
+        FreelancerUser["Desarrollador LatAm<br/>(Cavos: Passkey o Freighter)"]
     end
 
     %% CAPA 2: APLICACIÓN FRONTEND
     subgraph L2 ["Capa de Aplicación Frontend"]
         direction TB
         ClientPanel["Panel del Cliente<br/>(Creación RWA & Fondeo)"]
-        WalletKit["Stellar Wallets Kit<br/>(Gestión de Sesión Web3)"]
+        WalletKit["Cavos Kit + Stellar Wallets Kit<br/>(Cavos gasless y Freighter nativo)"]
         FreelancerPanel["Panel Freelancer<br/>(Carga SHA-256 & Timeout)"]
     end
 
     %% CAPA 3: COMUNICACIÓN Y CONSENSO
     subgraph L3 ["Capa de Comunicación & Consenso"]
         direction TB
-        StellarRPC["Stellar RPC / Horizon<br/>(Horizon & SAC Balance)"]
+        StellarRPC["Soroban RPC<br/>(getLedgerEntries y balance SAC)"]
         SorobanRPC["Soroban RPC Node<br/>(simulate & assemble Tx)"]
     end
 
@@ -86,8 +92,8 @@ flowchart LR
     end
 
     %% CONEXIONES
-    ClientUser -->|"Firma Freighter"| ClientPanel
-    FreelancerUser -->|"Firma Freighter"| FreelancerPanel
+    ClientUser -->|"Cavos patrocinado o firma Freighter"| ClientPanel
+    FreelancerUser -->|"Cavos patrocinado o firma Freighter"| FreelancerPanel
     ClientPanel --> WalletKit
     FreelancerPanel --> WalletKit
 
@@ -102,15 +108,15 @@ flowchart LR
     SACUSDC -.->|"Eventos Off-Chain"| SupabaseDB
     EscrowContract -.->|"Trazabilidad Tx"| StellarExpert
     AIAgent -->|"resolve_dispute() firmado"| EscrowContract
-    EscrowContract -.->|"MilestoneStatus::Disputed"| AIAgent
+    SupabaseDB -.->|"Evidencia off-chain"| AIAgent
 ```
 
 ### 2.2. Responsabilidades por Capa
 
-1. **Capa de Usuarios & Billeteras:** Autenticación no custodial mediante **Freighter Wallet** para la firma criptográfica segura de transacciones.
-2. **Capa de Aplicación Frontend:** Interfaz en React / TypeScript con soporte de `@stellar/stellar-wallets-kit` para orquestar la conexión y los flujos diferenciados de cliente (fondeo) y freelancer (entregas y reclamos).
+1. **Capa de Usuarios & Billeteras:** autenticación no custodial mediante **Cavos** (Google/Passkeys y relayer patrocinado) o **Freighter** para usuarios Web3 nativos.
+2. **Capa de Aplicación Frontend:** React / TypeScript consume hooks comunes para Cavos y Freighter; el modo Cavos usa `wallet.invokeContract` con patrocinio de gas.
 3. **Capa de Comunicación & Consenso:**
-   - **Stellar RPC / Horizon:** Consultas de estado de cuenta y saldos SAC USDC vía `getLedgerEntries`.
+   - **Soroban RPC:** consultas de estado y saldos SAC USDC vía `getLedgerEntries`, sin depender de Horizon.
    - **Soroban RPC Node:** Simulación transaccional (`simulateTransaction`) para determinar footprints de almacenamiento y empaquetado final (`assembleTransaction`).
 4. **Capa On-Chain (Soroban Runtime):** Ejecución del contrato inteligente `escrow_milestones.rs` (`#![no_std]`) en WebAssembly y coordinación con el `SAC USDC` nativo.
 5. **Capa de Auditoría y Agente de IA:**
@@ -129,15 +135,15 @@ sequenceDiagram
     autonumber
     actor Cliente as Cliente (Empresa)
     actor Freelancer as Freelancer (Dev LatAm)
-    participant Front as Frontend (React + Kit)
-    participant RPC as Stellar RPC (Horizon & RPC)
+    participant Front as Frontend (React + Cavos/Freighter)
+    participant RPC as Soroban RPC
     participant Escrow as Contrato Escrow (Soroban Rust)
     participant SAC as SAC USDC (7 Decimales)
     participant IA as Agente de IA (Arbitrador LLM)
 
     %% FASE 1: CREACIÓN Y FONDEO
     Note over Cliente, IA: === Fase 1: Creación y Fondeo del Contrato RWA ===
-    Cliente->>Front: Conecta Freighter y define hitos ($1,000 USDC)
+    Cliente->>Front: Inicia con Cavos/Passkey o conecta Freighter y define hitos ($1,000 USDC)
     Front->>RPC: getLedgerEntries() / balance SAC USDC
     RPC-->>Front: Cuenta y balance verificados
     Front->>Front: simulateTransaction() & assembleTransaction()
@@ -169,9 +175,8 @@ sequenceDiagram
 
     %% FASE 3C: ARBITRAJE IA
     Note over Cliente, IA: === Fase 3C: Resolución y Arbitraje por Agente de IA (Umbral de Avance) ===
-    Cliente->>Escrow: dispute_milestone(id: 1) [require_auth]
-    Escrow->>RPC: Emite evento MilestoneStatus::Disputed
-    RPC-->>IA: Polling detecta disputa y audita repo (GitHub API + LLM)
+    Cliente->>Front: Registra evidencia de disputa off-chain
+    Front-->>IA: Entrega evidencia para auditoría (GitHub API + LLM)
     
     alt Avance Funcional >= 80% (Período de Subsanación)
         IA->>Escrow: grant_revision_extension(id: 1, 5 días) [require_auth]
@@ -232,15 +237,14 @@ stateDiagram-v2
 
 | Estado Origen | Función Disparadora | Invocador Autorizado | Precondición (Guarda) | Estado Destino | Acción Financiera (SAC USDC) |
 |---|---|---|---|---|---|
-| `(None)` | `deposit_and_create_milestones` | Cliente | Saldo suficiente en cuenta cliente | `Pending` | Transferencia `Cliente -> Contrato` (Monto Total) |
-| `Pending` | `submit_milestone` | Freelancer | Hito en turno; `proof_hash != 0` | `Submitted` | Ninguna. Se inicia temporizador de 14 días. |
-| `Submitted` | `approve_milestone` | Cliente | Hito en estado `Submitted` | `Approved` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
-| `Submitted` | `claim_timeout` | Freelancer | `ledger_timestamp >= submitted_at + 14d` | `Approved` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
-| `Submitted` | `dispute_milestone` | Cliente | `ledger_timestamp < submitted_at + 14d` | `Disputed` | Ninguna. Se congelan los temporizadores. |
-| `Disputed` | `grant_revision_extension` | Agente IA (Árbitro) | Score LLM ≥ 80% de avance | `RevisionRequired` | Ninguna. Extiende plazo por 5 días adicionales. |
-| `RevisionRequired` | `submit_milestone` | Freelancer | `ledger_timestamp <= extension_deadline` | `Submitted` | Ninguna. Se reinicia ventana de revisión. |
-| `Disputed` | `resolve_dispute(false)` | Agente IA (Árbitro) | Score LLM < 80% de avance | `Refunded` | Transferencia `Contrato -> Cliente` (100% Monto Hito) |
-| `Disputed` | `resolve_dispute(true)` | Agente IA (Árbitro) | Subsanación verificada conforme | `Approved` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
+| `(None)` | `deposit_and_create_milestones` | Cliente | Saldo y autorización del cliente | `Pending` | Transferencia `Cliente -> Contrato` (Monto Total) |
+| Cualquier estado existente | `submit_milestone` | Freelancer | Autorización del freelancer | `Submitted` | Registra el hash y timestamp. |
+| Cualquier estado existente | `approve_milestone` | Cliente | Autorización del cliente | `Approved` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
+| Hito con timestamp vencido | `claim_timeout` | Freelancer | `ledger_timestamp >= submission_timestamp + timeout_duration` | `TimedOut` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
+| `Submitted` | `dispute_milestone` *(no desplegado)* | Cliente | Requiere nueva versión del contrato | `Disputed` | No disponible en la versión actual. |
+| Cualquier estado existente | `grant_revision_extension` | Agente IA (Árbitro) | Autorización de `dispute_resolver` | `RevisionRequired` | Guarda una fecha de referencia futura en `submission_timestamp`. |
+| Cualquier estado existente | `resolve_dispute(false)` | Agente IA (Árbitro) | Autorización de `dispute_resolver` | `TimedOut` | Transferencia `Contrato -> Cliente` (Monto Hito) |
+| Cualquier estado existente | `resolve_dispute(true)` | Agente IA (Árbitro) | Autorización de `dispute_resolver` | `TimedOut` | Transferencia `Contrato -> Freelancer` (Monto Hito) |
 
 ---
 
@@ -251,30 +255,25 @@ El contrato inteligente `escrow_milestones.rs` opera en un entorno WebAssembly e
 
 | Estructura / Tipo | Tipo de Almacenamiento | Campos Clave | Propósito Arquitectónico |
 |---|---|---|---|
-| `ContractConfig` | `InstanceStorage` | `client`, `freelancer`, `arbiter`, `token`, `milestone_count` | Parámetros singleton inmutables y direcciones con roles de acceso. |
-| `Milestone` | `PersistentStorage` | `id`, `amount`, `proof_hash`, `submitted_at`, `extension_deadline`, `status` | Entidad granular de cada hito; renueva su TTL en cada interacción. |
-| `MilestoneStatus` | Enum On-Chain | `Pending`, `Submitted`, `Disputed`, `RevisionRequired`, `Approved`, `Refunded` | Control determinista de la máquina de estados. |
-| `DataKey` | Enum de Acceso | `Config`, `Milestone(u32)` | Espacio de claves tipado para lectura y escritura segura en el ledger. |
+| `ProjectConfig` | `InstanceStorage` | `client`, `freelancer`, `dispute_resolver`, `token`, `total_amount`, `timeout_duration`, `progress_threshold` | Parámetros singleton y direcciones con roles de acceso. |
+| `Milestone` | `PersistentStorage` | `id`, `amount`, `description_hash`, `submission_timestamp`, `status` | Entidad granular de cada hito; su TTL se extiende durante el fondeo. |
+| `MilestoneStatus` | Enum On-Chain | `Pending`, `Submitted`, `Disputed`, `RevisionRequired`, `Approved`, `TimedOut` | Control de estado de la versión desplegada. |
+| `DataKey` | Enum de Acceso | `Config`, `MilestoneCount`, `Milestone(u32)` | Espacio de claves tipado para lectura y escritura segura en el ledger. |
 
 ### 5.2. Matriz de Interfaces del Smart Contract
 
 | Interfaz Pública | Roles con `require_auth` | Parámetros Principales | Efecto de Estado y Financiero |
 |---|---|---|---|
-| `deposit_and_create_milestones` | `client` | `client`, `freelancer`, `arbiter`, `token`, `milestones_data` | Inicializa configuración, transfiere total en SAC USDC al escrow y persiste hitos en `Pending`. |
+| `__constructor` | despliegue | `client`, `freelancer`, `token`, `dispute_resolver`, `timeout_duration`, `progress_threshold` | Inicializa la configuración del escrow. |
+| `deposit_and_create_milestones` | `client` | `amounts`, `hashes` | Transfiere total en SAC USDC al escrow y persiste hitos en `Pending`. |
 | `submit_milestone` | `freelancer` | `milestone_id`, `proof_hash` | Registra hash SHA-256, fija timestamp en ledger e inicia temporizador de 14 días (`Submitted`). |
 | `approve_milestone` | `client` | `milestone_id` | Cambia estado a `Approved` y transfiere atómicamente el monto del hito al freelancer. |
 | `claim_timeout` | `freelancer` | `milestone_id` | Valida expiración de 14 días sin respuesta del cliente y auto-libera fondos al freelancer. |
 | `grant_revision_extension` | `arbiter` (Agente IA) | `milestone_id`, `extension_seconds` | Concede prórroga de 5 días para subsanar observaciones técnicas (`RevisionRequired`). |
 | `resolve_dispute` | `arbiter` (Agente IA) | `milestone_id`, `release_to_freelancer` | Si es favorable: liquida a freelancer. Si es desfavorable (< 80%): reembolsa 100% al cliente. |
 
-### 5.3. Tópicos de Eventos Publicados
-El contrato emite eventos indexables mediante `env.events().publish(...)` para sincronización con la capa off-chain:
-* `(symbol_short!("created"), client, total_amount)`: Notifica el fondeo exitoso del contrato.
-* `(symbol_short!("submitted"), milestone_id, proof_hash)`: Notifica entrega técnica de entregable.
-* `(symbol_short!("approved"), milestone_id, amount)`: Notifica liquidación ordinaria o por timeout.
-* `(symbol_short!("disputed"), milestone_id)`: Dispara la intervención inmediata del oráculo de arbitraje IA.
-* `(symbol_short!("extended"), milestone_id, extension_deadline)`: Notifica prórroga concedida.
-* `(symbol_short!("resolved"), milestone_id, release_to_freelancer)`: Notifica la resolución definitiva de disputa.
+### 5.3. Eventos e indexación
+La versión desplegada no usa `env.events().publish(...)`. La capa off-chain debe indexar hashes de transacción mediante Soroban RPC; emitir eventos de `created`, `submitted`, `approved` y `disputed` es una mejora pendiente para una versión futura del contrato.
 
 ---
 
