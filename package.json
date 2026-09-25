@@ -1,34 +1,18 @@
 {
   "name": "agreedpay",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
   "dependencies": {
     "@cavos/kit": "^0.2.4",
-    "@creit.tech/stellar-wallets-kit": "^2.7.0",
-    "@stellar/freighter-api": "^2.0.0",
-    "@stellar/stellar-sdk": "^13.0.0",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.16.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.6.0"
+    "@creit-tech/stellar-wallets-kit": "npm:@creit.tech/stellar-wallets-kit@^2.7.0",
+    "@stellar/freighter-api": "^6.0.1",
+    "@stellar/stellar-sdk": "^17.1.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.10",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.1",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3",
-    "vite": "^5.4.14",
-    "vite-plugin-node-polyfills": "^0.23.0"
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0"
   }
 }
