@@ -44,13 +44,13 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-space-md sm:p-space-lg overflow-y-auto"
       style={{ background: 'rgba(19, 27, 46, 0.4)', backdropFilter: 'blur(8px)' }}
       onClick={onClose}
     >
       {/* MODAL CONTAINER */}
-      <div 
+      <div
         className="relative w-full max-w-[620px] my-auto bg-surface-container-lowest rounded-2xl shadow-2xl p-space-lg sm:p-space-xl flex flex-col gap-space-lg transition-transform duration-200"
         style={{
           backgroundColor: '#ffffff',
@@ -63,7 +63,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
         {/* HEADER */}
         <div className="flex items-start justify-between gap-space-md">
           <div className="flex items-start gap-space-md">
-            <div 
+            <div
               className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
               style={{
                 backgroundColor: 'rgb(255, 247, 237)',
@@ -84,7 +84,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
               </p>
             </div>
           </div>
-          <button 
+          <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar modal"
@@ -103,7 +103,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
               <span className="text-on-surface-variant font-body-sm text-body-sm">Obligatorio</span>
             </label>
             <div className="relative flex items-center">
-              <input 
+              <input
                 id="projectName"
                 type="text"
                 required
@@ -132,7 +132,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
               </span>
             </div>
             <div className="relative flex items-center">
-              <input 
+              <input
                 id="counterpartyInput"
                 type="text"
                 required
@@ -153,7 +153,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
           </div>
 
           {/* Campo 3: Monto Total en Custodia */}
-          <div 
+          <div
             className="p-space-md rounded-xl flex flex-col gap-space-xs shadow-sm"
             style={{
               background: 'linear-gradient(rgb(250, 250, 250) 0%, rgb(248, 250, 252) 100%)',
@@ -172,7 +172,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
             </div>
             <div className="flex items-baseline justify-between gap-space-sm pt-1">
               <div className="flex items-baseline gap-2">
-                <input 
+                <input
                   id="escrowAmount"
                   type="text"
                   value={amount}
@@ -189,7 +189,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
           </div>
 
           {/* SECCIÓN 4: SLIDER DE UMBRAL IA OBLIGATORIO */}
-          <div 
+          <div
             className="p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm"
             style={{
               backgroundColor: '#ffffff',
@@ -214,7 +214,7 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
             {/* Interactive Range Slider */}
             <div className="flex flex-col gap-2 pt-2">
               <div className="relative w-full flex items-center">
-                <input 
+                <input
                   type="range"
                   min="50"
                   max="95"
@@ -255,11 +255,11 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
                 </span>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
-                <input 
-                  type="checkbox" 
-                  checked={antiLockup} 
-                  onChange={(e) => setAntiLockup(e.target.checked)} 
-                  className="sr-only peer" 
+                <input
+                  type="checkbox"
+                  checked={antiLockup}
+                  onChange={(e) => setAntiLockup(e.target.checked)}
+                  className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:border-surface-container-high after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
@@ -281,27 +281,26 @@ export const CreateAgreementModal: React.FC<CreateAgreementModalProps> = ({
 
           {/* SECCIÓN 6: BOTONERA DE ACCIÓN */}
           <div className="flex flex-col sm:flex-row items-center justify-end gap-space-sm pt-space-xs">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className="w-full sm:w-auto px-5 py-3 rounded-xl font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors text-center font-semibold"
             >
               Cancelar
             </button>
-            <button 
+            <button
               type="submit"
               disabled={isSubmitting || isSuccess}
-              className={`w-full sm:w-auto px-6 py-3.5 rounded-xl font-headline-sm text-headline-sm shadow-md flex items-center justify-center gap-2 transition-all transform active:scale-[0.99] font-bold ${
-                isSuccess 
-                  ? 'bg-secondary text-on-secondary' 
-                  : 'bg-primary text-on-primary hover:bg-primary-container'
-              }`}
+              className={`w-full sm:w-auto px-6 py-3.5 rounded-xl font-headline-sm text-headline-sm shadow-md flex items-center justify-center gap-2 transition-all transform active:scale-[0.99] font-bold ${isSuccess
+                ? 'bg-secondary text-on-secondary'
+                : 'bg-primary text-on-primary hover:bg-primary-container'
+                }`}
               style={{
                 backgroundColor: isSuccess ? '#16a34a' : 'rgb(234, 88, 12)',
                 color: '#ffffff',
                 borderRadius: '0.75rem',
-                boxShadow: isSuccess 
-                  ? 'rgba(22, 163, 74, 0.35) 0px 10px 20px -5px' 
+                boxShadow: isSuccess
+                  ? 'rgba(22, 163, 74, 0.35) 0px 10px 20px -5px'
                   : 'rgba(234, 88, 12, 0.35) 0px 10px 20px -5px, rgba(234, 88, 12, 0.2) 0px 4px 6px -2px'
               }}
             >
