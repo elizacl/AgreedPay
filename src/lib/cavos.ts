@@ -21,13 +21,6 @@ const getEnvVar = (key: string, fallback = ""): string => {
     }
   } catch (_) {}
 
-  try {
-    if (typeof process !== "undefined" && process.env) {
-      const val = process.env[key] || process.env[`VITE_${key}`] || process.env[`PUBLIC_${key}`];
-      if (val) return val;
-    }
-  } catch (_) {}
-
   return fallback;
 };
 

@@ -20,8 +20,8 @@ import { FreighterModule } from "@creit-tech/stellar-wallets-kit/modules/freight
 // ============================================================================
 
 /**
- * Obtiene variables de entorno de forma compatible con Vite (import.meta.env)
- * y Node.js / Next.js (process.env).
+ * Obtiene variables de entorno expuestas por Vite. Este módulo se ejecuta en
+ * el navegador, por lo que no debe depender de `process.env`.
  */
 const getEnvVar = (key: string, fallback = ""): string => {
   try {
@@ -29,13 +29,6 @@ const getEnvVar = (key: string, fallback = ""): string => {
     if (typeof import.meta !== "undefined" && import.meta.env) {
       // @ts-ignore
       const val = import.meta.env[key] || import.meta.env[`VITE_${key}`] || import.meta.env[`PUBLIC_${key}`];
-      if (val) return val;
-    }
-  } catch (_) {}
-
-  try {
-    if (typeof process !== "undefined" && process.env) {
-      const val = process.env[key] || process.env[`VITE_${key}`] || process.env[`PUBLIC_${key}`];
       if (val) return val;
     }
   } catch (_) {}

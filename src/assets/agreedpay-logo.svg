@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+  <!-- Escudo Base -->
+  <path d="M50 10 L82 24 V52 C82 72 68 86 50 92 C32 86 18 72 18 52 V24 L50 10 Z" fill="url(#shieldGrad)" />
+  <path d="M50 16 L76 28 V52 C76 68 64 80 50 85 C36 80 24 68 24 52 V28 L50 16 Z" fill="#0f172a" />
+  <!-- Rayo de Liquidación Rápida -->
+  <path d="M53 28 L36 50 H49 L45 72 L64 46 H51 L53 28 Z" fill="url(#boltGrad)" />
+</svg>
