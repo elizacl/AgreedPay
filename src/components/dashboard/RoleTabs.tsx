@@ -4,7 +4,6 @@ import { Role } from '../../types';
 interface RoleTabsProps {
   currentRole: Role;
   onRoleChange: (role: Role) => void;
-  onOpenCreateAgreement?: () => void;
   onDownloadLegalPdf?: () => void;
   onOpenVault?: () => void;
 }
@@ -12,7 +11,6 @@ interface RoleTabsProps {
 export const RoleTabs: React.FC<RoleTabsProps> = ({
   currentRole,
   onRoleChange,
-  onOpenCreateAgreement,
   onDownloadLegalPdf,
   onOpenVault,
 }) => {
@@ -31,13 +29,9 @@ export const RoleTabs: React.FC<RoleTabsProps> = ({
               <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
               Activo (3/5 Hitos)
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-code-sm text-code-sm">
-              <span className="material-symbols-outlined text-xs">deployed_code</span>
-              stellar:contract:CA32...88A1
-            </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
-              <span className="material-symbols-outlined text-xs">shield</span>
-              Custodia Multifirma 2/3
+              <span className="material-symbols-outlined text-xs">lock</span>
+              Custodia Segura
             </span>
           </div>
           <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">
@@ -65,9 +59,9 @@ export const RoleTabs: React.FC<RoleTabsProps> = ({
         </div>
       </div>
 
-      {/* ROLE SELECTOR BAR & QUICK CREATION */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-space-sm pt-space-sm border-t border-surface-container-low">
-        <div className="inline-flex p-1 rounded-xl bg-surface-container-low self-start">
+      {/* ROLE SELECTOR BAR */}
+      <div className="flex items-center gap-space-sm pt-space-sm border-t border-surface-container-low">
+        <div className="inline-flex p-1 rounded-xl bg-surface-container-low">
           <button 
             type="button"
             onClick={() => onRoleChange('client')}
@@ -83,7 +77,7 @@ export const RoleTabs: React.FC<RoleTabsProps> = ({
             }
           >
             <span className="material-symbols-outlined text-sm">business_center</span>
-            Panel del Cliente (ClientDash)
+            Vista Cliente
           </button>
           <button 
             type="button"
@@ -100,19 +94,7 @@ export const RoleTabs: React.FC<RoleTabsProps> = ({
             }
           >
             <span className="material-symbols-outlined text-sm">terminal</span>
-            Panel del Freelancer (DevDash)
-          </button>
-        </div>
-
-        <div className="flex items-center gap-space-sm w-full sm:w-auto justify-end">
-          <button 
-            type="button"
-            onClick={onOpenCreateAgreement}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-on-primary font-label-md text-label-md font-bold shadow-sm transition-all transform active:scale-95"
-            style={{ backgroundColor: 'rgb(234, 88, 12)', color: '#ffffff' }}
-          >
-            <span className="material-symbols-outlined text-base">add_circle</span>
-            + Crear Nuevo Acuerdo
+            Vista Freelancer
           </button>
         </div>
       </div>

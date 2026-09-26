@@ -6,9 +6,6 @@ interface NavbarProps {
   onOpenAuth: () => void;
   onDisconnect: () => void;
   onOpenCreateAgreement: () => void;
-  role: 'client' | 'developer';
-  activeTab?: string;
-  onSelectTab?: (tab: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,86 +13,34 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onDisconnect,
   onOpenCreateAgreement,
-  role,
-  activeTab = 'escrow-overview',
-  onSelectTab,
 }) => {
   const truncateAddress = (addr: string) => {
     if (!addr) return 'GABC...9XYZ';
     return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
   };
 
-  const navLinks = [
-    { id: 'escrow-overview', label: 'Escrow Overview' },
-    { id: 'active-contracts', label: 'Active Contracts' },
-    { id: 'milestones', label: 'Milestones' },
-    { id: 'dispute-center', label: 'Dispute Center' },
-    { id: 'audit-and-logs', label: 'Audit & Logs' },
-  ];
-
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest border-b border-surface-container-highest z-50">
       <div className="w-full h-full px-space-lg flex items-center justify-between gap-space-md">
         
-        {/* Brand & Desktop Navigation */}
-        <div className="flex items-center gap-space-lg">
+        {/* Brand */}
+        <div className="flex items-center gap-space-sm cursor-pointer select-none">
           <div 
-            className="flex items-center gap-space-sm cursor-pointer select-none"
-            onClick={() => onSelectTab && onSelectTab('escrow-overview')}
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-headline-sm text-headline-sm font-bold shadow-sm"
+            style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
           >
-            <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-headline-sm text-headline-sm font-bold shadow-sm"
-              style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
-            >
-              A
-            </div>
-            <span className="font-headline-sm text-headline-sm tracking-tight text-on-surface font-bold">
-              AgreedPay
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider font-semibold">
-              B2B Escrow
-            </span>
+            A
           </div>
-
-          <nav className="hidden xl:flex items-center gap-space-xs">
-            {navLinks.map((link) => {
-              const isActive = activeTab === link.id;
-              return (
-                <button
-                  key={link.id}
-                  onClick={() => onSelectTab && onSelectTab(link.id)}
-                  className={`px-3 py-1.5 rounded-lg transition-colors font-label-md text-label-md ${
-                    isActive
-                      ? 'text-primary font-bold bg-surface-container-low'
-                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
-                  }`}
-                  style={isActive ? { color: '#ea580c', backgroundColor: '#fff7ed', border: '1px solid #ffedd5' } : {}}
-                >
-                  {link.label}
-                </button>
-              );
-            })}
-          </nav>
+          <span className="font-headline-sm text-headline-sm tracking-tight text-on-surface font-bold">
+            AgreedPay
+          </span>
+          <span className="hidden sm:inline px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+            Custodia Inteligente
+          </span>
         </div>
 
-        {/* Network status, gasless relayer & user session */}
+        {/* Actions & user session */}
         <div className="flex items-center gap-space-md">
-          {/* Stellar Testnet */}
-          <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container border border-surface-container-high">
-            <span className="w-2 h-2 rounded-full bg-secondary"></span>
-            <span className="font-code-sm text-code-sm text-on-surface font-medium">Stellar Testnet</span>
-          </div>
-
-          {/* Sponsored Gasless Transaction */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed">
-            <span className="font-label-sm text-label-sm font-semibold">⚡ Transacción Sin Gas (Patrocinada)</span>
-          </div>
-
-          {/* Settlement Pool */}
-          <div className="hidden sm:flex flex-col text-right">
-            <span className="font-label-sm text-label-sm text-on-surface-variant">Settlement Pool</span>
-            <span className="font-code-sm text-code-sm text-on-surface font-semibold">150,000.00 USDC</span>
-          </div>
 
           {/* Quick Create Button */}
           <button

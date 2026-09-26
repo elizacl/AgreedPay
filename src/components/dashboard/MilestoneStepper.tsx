@@ -50,11 +50,11 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
             Rastreador de Hitos
           </h2>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Ejecución descentralizada supervisada por contratos Stellar Soroban
+            Seguimiento de entregables y liberación de fondos
           </p>
         </div>
         <span className="font-code-sm text-code-sm px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-medium">
-          Modo: Estricto (Multisig 2/3)
+          Custodia Segura
         </span>
       </div>
 
@@ -76,7 +76,7 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
               <div className="flex items-center gap-space-xs mb-1">
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Hito 1 • 12 Oct 2024</span>
                 <span className="px-2 py-0.5 rounded-full font-label-sm text-label-sm font-semibold" style={{ backgroundColor: '#dcfce7', color: '#16a34a' }}>
-                  Fondos Desembolsados
+                  ✅ Aprobado & Pagado
                 </span>
               </div>
               <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
@@ -85,10 +85,38 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
                 Wireframes completos, design system con tokens y flujos aprobados.
               </p>
+              <details className="mt-2 text-xs group/details">
+                <summary className="cursor-pointer text-outline hover:text-tertiary font-code-sm list-none flex items-center gap-1 select-none">
+                  <span className="material-symbols-outlined text-xs">tune</span>
+                  <span>Detalles técnicos on-chain</span>
+                </summary>
+                <div className="mt-1.5 p-2 rounded bg-surface-container-low font-code-sm text-on-surface-variant flex flex-col gap-1 border border-slate-200">
+                  <div className="flex justify-between">
+                    <span>Contrato Soroban:</span>
+                    <span className="font-semibold text-on-surface">CA32...88A1</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Hash SHA-256:</span>
+                    <span className="font-semibold text-on-surface">0x48abc190...8401</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Ledger Sequence:</span>
+                    <span className="font-semibold text-on-surface">#54,198,024</span>
+                  </div>
+                </div>
+              </details>
             </div>
-            <div className="text-right flex-shrink-0">
+            <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
               <span className="font-metric-md text-metric-md font-bold text-secondary" style={{ color: '#16a34a' }}>$15,000</span>
-              <span className="font-code-sm text-code-sm text-on-surface-variant block">Tx: 0x48a...bc19</span>
+              <a 
+                href="https://stellar.expert/explorer/testnet/tx/0x48abc19041289124018240981203984102938401"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 font-code-sm text-code-sm text-tertiary hover:underline"
+              >
+                <span className="material-symbols-outlined text-xs">open_in_new</span>
+                Verificar en Blockchain
+              </a>
             </div>
           </div>
         </div>
@@ -106,7 +134,7 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
               <div className="flex items-center gap-space-xs mb-1">
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Hito 2 • 28 Oct 2024</span>
                 <span className="px-2 py-0.5 rounded-full font-label-sm text-label-sm font-semibold" style={{ backgroundColor: '#dcfce7', color: '#16a34a' }}>
-                  Fondos Desembolsados
+                  ✅ Aprobado & Pagado
                 </span>
               </div>
               <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
@@ -115,10 +143,38 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
                 Integración cliente REST y autenticación passkey verificada.
               </p>
+              <details className="mt-2 text-xs group/details">
+                <summary className="cursor-pointer text-outline hover:text-tertiary font-code-sm list-none flex items-center gap-1 select-none">
+                  <span className="material-symbols-outlined text-xs">tune</span>
+                  <span>Detalles técnicos on-chain</span>
+                </summary>
+                <div className="mt-1.5 p-2 rounded bg-surface-container-low font-code-sm text-on-surface-variant flex flex-col gap-1 border border-slate-200">
+                  <div className="flex justify-between">
+                    <span>Contrato Soroban:</span>
+                    <span className="font-semibold text-on-surface">CA32...88A1</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Hash SHA-256:</span>
+                    <span className="font-semibold text-on-surface">0x91d72fa0...8124</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Ledger Sequence:</span>
+                    <span className="font-semibold text-on-surface">#54,203,115</span>
+                  </div>
+                </div>
+              </details>
             </div>
-            <div className="text-right flex-shrink-0">
+            <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
               <span className="font-metric-md text-metric-md font-bold text-secondary" style={{ color: '#16a34a' }}>$20,000</span>
-              <span className="font-code-sm text-code-sm text-on-surface-variant block">Tx: 0x91d...72fa</span>
+              <a 
+                href="https://stellar.expert/explorer/testnet/tx/0x91d72fa019283019823901840192309XYZ998124"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 font-code-sm text-code-sm text-tertiary hover:underline"
+              >
+                <span className="material-symbols-outlined text-xs">open_in_new</span>
+                Verificar en Blockchain
+              </a>
             </div>
           </div>
         </div>
@@ -154,12 +210,12 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
                 </span>
                 <span className="px-2.5 py-1 rounded-md bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-semibold flex items-center gap-1">
                   <span className="material-symbols-outlined text-xs">draw</span>
-                  Firma 1 de 2 requeridas
+                  Requiere aprobación
                 </span>
               </div>
               <div className="text-right">
                 <span className="font-metric-xl text-metric-xl font-bold text-secondary" style={{ color: '#16a34a' }}>$25,000</span>
-                <span className="font-code-sm text-code-sm text-on-surface-variant block">Fianza Escrow USDC</span>
+                <span className="font-code-sm text-code-sm text-on-surface-variant block">En custodia USDC</span>
               </div>
             </div>
 
@@ -232,34 +288,43 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
             <div className="flex flex-col sm:flex-row items-center gap-space-sm pt-space-xs">
               {role === 'client' ? (
                 <>
-                  <button 
-                    type="button"
-                    disabled={isApproving || isApprovedSuccess}
-                    onClick={handleApproveClick}
-                    className="w-full sm:flex-1 py-3 px-6 rounded-xl font-label-md text-label-md font-bold shadow-md flex items-center justify-center gap-2 transition-all transform active:scale-95"
-                    style={{
-                      backgroundColor: isApprovedSuccess ? '#16a34a' : '#16a34a',
-                      color: '#ffffff',
-                      boxShadow: 'rgba(22, 163, 74, 0.35) 0px 6px 16px -2px'
-                    }}
-                  >
-                    {isApproving ? (
-                      <>
-                        <span className="material-symbols-outlined text-base animate-spin">refresh</span>
-                        <span>Firmando Transacción Stellar...</span>
-                      </>
-                    ) : isApprovedSuccess ? (
-                      <>
-                        <span className="material-symbols-outlined text-base">check_circle</span>
-                        <span>$25,000 USDC Liberados con Éxito</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined text-base">verified</span>
-                        <span>Aprobar y Liberar Fondos ($25,000)</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="w-full sm:flex-1 flex flex-col gap-1">
+                    <button 
+                      type="button"
+                      disabled={isApproving || isApprovedSuccess}
+                      onClick={handleApproveClick}
+                      title="⚡ Transacción Sin Gas: Patrocinada automáticamente por AgreedPay Relay"
+                      className="w-full py-3 px-6 rounded-xl font-label-md text-label-md font-bold shadow-md flex items-center justify-center gap-2 transition-all transform active:scale-95"
+                      style={{
+                        backgroundColor: '#16a34a',
+                        color: '#ffffff',
+                        boxShadow: 'rgba(22, 163, 74, 0.35) 0px 6px 16px -2px'
+                      }}
+                    >
+                      {isApproving ? (
+                        <>
+                          <span className="material-symbols-outlined text-base animate-spin">refresh</span>
+                          <span>Firmando Transacción Stellar...</span>
+                        </>
+                      ) : isApprovedSuccess ? (
+                        <>
+                          <span className="material-symbols-outlined text-base">check_circle</span>
+                          <span>$25,000 USDC Liberados con Éxito</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-base">verified</span>
+                          <span>Aprobar y Liberar Fondos ($25,000)</span>
+                          <span className="ml-1 px-1.5 py-0.5 rounded text-[11px] bg-white/20 font-semibold tracking-wide">
+                            ⚡ Sin Gas
+                          </span>
+                        </>
+                      )}
+                    </button>
+                    <span className="text-[11px] text-center text-on-surface-variant flex items-center justify-center gap-1">
+                      <span className="text-secondary font-semibold" style={{ color: '#16a34a' }}>⚡ Transacción sin comisiones</span> • Patrocinada vía Cavos Relay
+                    </span>
+                  </div>
 
                   <button 
                     type="button"
@@ -275,11 +340,15 @@ export const MilestoneStepper: React.FC<MilestoneStepperProps> = ({
                   <button 
                     type="button"
                     onClick={() => onSubmitWork && onSubmitWork(2)}
+                    title="⚡ Transacción Sin Gas: Patrocinada automáticamente por AgreedPay Relay"
                     className="w-full sm:flex-1 py-3 px-6 rounded-xl font-label-md text-label-md font-bold shadow-md flex items-center justify-center gap-2 transition-all text-white"
                     style={{ backgroundColor: '#ea580c' }}
                   >
                     <span className="material-symbols-outlined text-base">send</span>
-                    Notificar Entrega al Cliente
+                    <span>Notificar Entrega al Cliente</span>
+                    <span className="ml-1 px-1.5 py-0.5 rounded text-[11px] bg-white/20 font-semibold">
+                      ⚡ Sin Gas
+                    </span>
                   </button>
                   <button 
                     type="button"

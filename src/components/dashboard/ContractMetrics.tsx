@@ -125,7 +125,7 @@ export const ContractMetrics: React.FC<ContractMetricsProps> = ({
       >
         <div className="flex items-center justify-between">
           <span className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">
-            Cláusula Anti-Lockup
+            Plazo de Revisión
           </span>
           <span className="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold flex items-center gap-1">
             <span className="material-symbols-outlined text-xs">timer</span>
@@ -145,8 +145,8 @@ export const ContractMetrics: React.FC<ContractMetricsProps> = ({
             <div className="bg-primary h-2 rounded-full" style={{ width: '79%', backgroundColor: '#ea580c' }}></div>
           </div>
           <div className="flex justify-between items-center mt-1">
-            <span className="font-code-sm text-code-sm text-on-surface-variant">Timeout Soroban</span>
-            <span className="font-code-sm text-code-sm font-semibold" style={{ color: '#ea580c' }}>79% restante</span>
+            <span className="font-code-sm text-code-sm text-on-surface-variant">Tiempo restante</span>
+            <span className="font-code-sm text-code-sm font-semibold" style={{ color: '#ea580c' }}>79%</span>
           </div>
         </div>
       </div>

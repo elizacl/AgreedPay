@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { EmptyContractsState } from './EmptyContractsState';
 
 interface ActiveContractsViewProps {
   onSelectContract: (id: string) => void;
@@ -278,7 +279,16 @@ export const ActiveContractsView: React.FC<ActiveContractsViewProps> = ({
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-code-sm text-code-sm text-outline">Hash: {item.hash}</span>
+                        <a 
+                          href={`https://stellar.expert/explorer/testnet/contract/${item.hash}`} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="font-code-sm text-code-sm text-outline hover:text-tertiary hover:underline inline-flex items-center gap-1"
+                          title="Verificar contrato en Stellar Expert"
+                        >
+                          <span>Hash: {item.hash}</span>
+                          <span className="material-symbols-outlined text-xs">open_in_new</span>
+                        </a>
                         <span className={`inline-flex items-center gap-1 font-label-sm text-label-sm ${
                           item.statusType === 'DISPUTE' ? 'text-error' : 'text-tertiary'
                         }`}>
@@ -378,6 +388,15 @@ export const ActiveContractsView: React.FC<ActiveContractsViewProps> = ({
                           Ver Detalle
                         </button>
                       )}
+                      <a 
+                        href={`https://stellar.expert/explorer/testnet/contract/${item.hash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded-lg text-outline hover:text-tertiary hover:bg-surface-container transition-colors"
+                        title="Verificar en Blockchain (Stellar Expert)"
+                      >
+                        <span className="material-symbols-outlined text-lg">open_in_new</span>
+                      </a>
                       <button 
                         type="button"
                         onClick={() => alert(`Opciones del contrato ${item.id}`)}
@@ -391,6 +410,11 @@ export const ActiveContractsView: React.FC<ActiveContractsViewProps> = ({
               ))}
             </tbody>
           </table>
+          {filtered.length === 0 && (
+            <div className="p-space-lg">
+              <EmptyContractsState onOpenCreateAgreement={onOpenCreateAgreement} />
+            </div>
+          )}
         </div>
 
         {/* Pagination & Table Footer */}

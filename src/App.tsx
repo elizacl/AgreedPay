@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { ContractMetrics } from './components/dashboard/ContractMetrics';
@@ -10,6 +10,7 @@ import { AuditLogsView } from './components/dashboard/AuditLogsView';
 import { CavosAuthModal } from './components/modals/CavosAuthModal';
 import { CreateAgreementModal, CreateAgreementInput } from './components/modals/CreateAgreementModal';
 import { DisputeModal } from './components/modals/DisputeModal';
+import { WelcomeScreen } from './components/WelcomeScreen';
 import { Role, AuthMethod } from './types/ui';
 import { Milestone } from './types/contract';
 import { useCavosAuth } from './hooks/useCavosAuth';
@@ -24,6 +25,8 @@ export const App: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState<boolean>(false);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   // Auth & Contract Hooks
   const { session, loginWithCavos, loginWithFreighter, logout } = useCavosAuth();
@@ -78,10 +81,22 @@ export const App: React.FC = () => {
   ]);
 
   const handleConnect = async (method: AuthMethod) => {
-    if (method === 'cavos') {
-      await loginWithCavos();
-    } else {
-      await loginWithFreighter();
+    try {
+      if (method === 'cavos') {
+        await loginWithCavos();
+      } else {
+        await loginWithFreighter();
+      }
+      setSuccessToast('✅ Billetera conectada exitosamente');
+      setTimeout(() => setSuccessToast(null), 4000);
+    } catch (err: any) {
+      const message = err?.message || 'Error al conectar la billetera.';
+      if (message.includes('Freighter')) {
+        setErrorToast('Freighter no detectado. Instala la extensión desde freighter.app para conectar tu wallet nativa.');
+      } else {
+        setErrorToast(message);
+      }
+      setTimeout(() => setErrorToast(null), 6000);
     }
   };
 
@@ -146,36 +161,68 @@ export const App: React.FC = () => {
         background: 'radial-gradient(circle at 50% 0%, rgba(255, 237, 213, 0.5) 0%, rgba(248, 250, 252, 0.8) 50%, rgb(248, 250, 252) 100%)',
       }}
     >
-      {/* 1. Header Fijo Superior (Brex Modern) */}
+      {/* Error Toast */}
+      {errorToast && (
+        <div className="fixed top-20 right-6 z-[100] max-w-sm animate-in slide-in-from-right">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 shadow-lg">
+            <span className="material-symbols-outlined text-red-500 text-xl flex-shrink-0">error</span>
+            <div className="flex-1">
+              <p className="font-label-md text-label-md font-semibold text-red-800">Error de Conexión</p>
+              <p className="font-body-sm text-body-sm text-red-700 mt-0.5">{errorToast}</p>
+            </div>
+            <button onClick={() => setErrorToast(null)} className="text-red-400 hover:text-red-600">
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {successToast && (
+        <div className="fixed top-20 right-6 z-[100] max-w-sm">
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200 shadow-lg">
+            <span className="material-symbols-outlined text-green-500 text-xl">check_circle</span>
+            <p className="font-label-md text-label-md font-semibold text-green-800">{successToast}</p>
+            <button onClick={() => setSuccessToast(null)} className="text-green-400 hover:text-green-600 ml-auto">
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 1. Header Fijo Superior (Web2-First) */}
       <Navbar
         session={session}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onDisconnect={logout}
         onOpenCreateAgreement={() => setIsCreateModalOpen(true)}
-        role={role}
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
       />
 
-      {/* 2. Sidebar Lateral Fijo (Settlement Ops & Configuration) */}
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-      />
+      {/* Conditional: Welcome Screen vs Dashboard */}
+      {!session.isConnected ? (
+        <div className="flex-1 flex flex-col pt-16">
+          <WelcomeScreen onOpenAuth={() => setIsAuthModalOpen(true)} />
+        </div>
+      ) : (
+        <>
+          {/* 2. Sidebar Lateral Fijo */}
+          <Sidebar 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+          />
 
-      {/* 3. Contenedor Principal (Con padding-left en desktop para librar el sidebar de 64rem) */}
-      <div className="md:pl-64 flex-1 flex flex-col pt-16">
-        <main className="w-full px-4 sm:px-6 lg:px-space-xl py-space-lg flex flex-col gap-space-lg">
+          {/* 3. Contenedor Principal */}
+          <div className="md:pl-64 flex-1 flex flex-col pt-16">
+            <main className="w-full px-4 sm:px-6 lg:px-space-xl py-space-lg flex flex-col gap-space-lg">
           
-          {/* VISTA 1: ESCROW OVERVIEW / MILESTONES */}
-          {(activeTab === 'escrow-overview' || activeTab === 'milestones') && (
+          {/* VISTA 1: PANEL PRINCIPAL (ESCROW OVERVIEW) */}
+          {activeTab === 'escrow-overview' && (
             <div className="flex flex-col gap-space-lg w-full">
               
-              {/* Header del Contrato & Switcher de Perspectiva (ClientDash vs DevDash) */}
+              {/* Header del Contrato & Switcher de Perspectiva */}
               <RoleTabs
                 currentRole={role}
                 onRoleChange={setRole}
-                onOpenCreateAgreement={() => setIsCreateModalOpen(true)}
                 onDownloadLegalPdf={() => alert('Generando informe legal criptográfico auditado en PDF...')}
                 onOpenVault={() => alert('Bóveda de Garantía: $85,000 USDC bloqueados en Soroban')}
               />
@@ -237,24 +284,24 @@ export const App: React.FC = () => {
             <AuditLogsView />
           )}
 
-          {/* VISTA 4: DISPUTE CENTER */}
+          {/* VISTA 3: CENTRO DE DISPUTAS */}
           {activeTab === 'dispute-center' && (
             <div className="flex flex-col gap-space-md bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm border border-slate-200">
-              <div className="flex items-center gap-2 text-primary" style={{ color: '#ea580c' }}>
+              <div className="flex items-center gap-2" style={{ color: '#ea580c' }}>
                 <span className="material-symbols-outlined text-2xl">gavel</span>
                 <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">
-                  Centro de Disputas &amp; Arbitraje IA
+                  Centro de Disputas
                 </h2>
               </div>
               <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-                Resolución descentralizada mediante oráculos de código (GitHub + AST) y mediación arbitral multifirma en Stellar Soroban.
+                Resolución descentralizada mediante verificación automática de entregables y mediación arbitral.
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-2">
                 <div className="p-space-md rounded-xl bg-surface-container-low border border-slate-200 flex flex-col justify-between">
                   <div className="space-y-1">
                     <span className="font-label-sm text-label-sm text-secondary font-bold uppercase">Disputa Activa #4054</span>
-                    <h3 className="font-headline-sm font-bold text-on-surface">Integración Oráculo IoT &amp; Pasarela Stellar</h3>
+                    <h3 className="font-headline-sm font-bold text-on-surface">Integración Oráculo IoT</h3>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">Helios Energy S.A. vs. ScaleOps LatAm</p>
                   </div>
                   <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
@@ -270,84 +317,16 @@ export const App: React.FC = () => {
 
                 <div className="p-space-md rounded-xl bg-surface-container-low border border-slate-200 flex flex-col justify-between">
                   <div className="space-y-1">
-                    <span className="font-label-sm text-label-sm text-primary font-bold uppercase" style={{ color: '#ea580c' }}>Regla de Corte al 80%</span>
-                    <h3 className="font-headline-sm font-bold text-on-surface">Política de Subsanación Automática</h3>
+                    <span className="font-label-sm text-label-sm font-bold uppercase" style={{ color: '#ea580c' }}>Política de Subsanación</span>
+                    <h3 className="font-headline-sm font-bold text-on-surface">Regla del 80% — Prórroga Automática</h3>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      Si el avance funcional verificado por IA es &ge; 80%, el smart contract concede 5 días hábiles de prórroga antes de considerar penalizaciones.
+                      Si el avance verificado es &ge; 80%, se conceden 5 días de prórroga antes de penalizaciones.
                     </p>
                   </div>
                   <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
-                    <span className="font-code-sm text-code-sm text-secondary font-semibold">Status: Operativo 100%</span>
-                    <span className="font-code-sm text-code-sm text-outline">Soroban Rule v21</span>
+                    <span className="font-code-sm text-code-sm text-secondary font-semibold">Operativo 100%</span>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* VISTA 5: TREASURY VAULT */}
-          {activeTab === 'treasury-vault' && (
-            <div className="flex flex-col gap-space-md bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm border border-slate-200">
-              <div className="flex items-center gap-2 text-secondary" style={{ color: '#16a34a' }}>
-                <span className="material-symbols-outlined text-2xl">account_balance</span>
-                <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">
-                  Treasury Vault: Bóveda de Custodia Institucional
-                </h2>
-              </div>
-              <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-                Balance total custodiado en Smart Contracts Soroban auditados con soporte SAC USDC 1:1.
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-md pt-2">
-                <div className="p-space-md rounded-xl bg-surface-container-low border border-slate-200">
-                  <span className="font-label-sm text-label-sm text-outline uppercase font-semibold">Balance Total</span>
-                  <div className="font-metric-xl text-metric-xl font-bold mt-1 text-secondary" style={{ color: '#16a34a' }}>
-                    $150,000.00 <span className="text-sm font-normal text-on-surface-variant">USDC</span>
-                  </div>
-                </div>
-                <div className="p-space-md rounded-xl bg-surface-container-low border border-slate-200">
-                  <span className="font-label-sm text-label-sm text-outline uppercase font-semibold">Contratos Vinculados</span>
-                  <div className="font-metric-xl text-metric-xl font-bold mt-1 text-on-surface">
-                    8 <span className="text-sm font-normal text-on-surface-variant">activos</span>
-                  </div>
-                </div>
-                <div className="p-space-md rounded-xl bg-surface-container-low border border-slate-200">
-                  <span className="font-label-sm text-label-sm text-outline uppercase font-semibold">Reserva Paymaster Cavos</span>
-                  <div className="font-metric-xl text-metric-xl font-bold mt-1 text-primary" style={{ color: '#ea580c' }}>
-                    1,480.20 <span className="text-sm font-normal text-on-surface-variant">XLM</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* VISTA 6: API & WEBHOOKS */}
-          {activeTab === 'api-and-webhooks' && (
-            <div className="flex flex-col gap-space-md bg-surface-container-lowest p-space-lg rounded-2xl shadow-sm border border-slate-200">
-              <div className="flex items-center gap-2 text-tertiary">
-                <span className="material-symbols-outlined text-2xl">webhook</span>
-                <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">
-                  API &amp; Webhooks Soroban
-                </h2>
-              </div>
-              <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-                Suscripción a eventos RPC de custodia, liquidaciones en tiempo real y webhooks de arbitraje IA.
-              </p>
-              <div className="p-space-md rounded-xl bg-surface-container-low font-code-sm text-code-sm text-on-surface overflow-x-auto border border-slate-200">
-                <code>
-                  {`// Ejemplo de webhook de liquidación emitido por AgreedPay
-POST https://api.tuempresa.com/webhooks/agreedpay
-Headers: X-Soroban-Signature: 0x8a92c4b819f7da56e29410...
-
-{
-  "event": "MILESTONE_SETTLED",
-  "contract_id": "CA4092E7B38A89104BA9D22E891C007421DA198B201",
-  "milestone_index": 2,
-  "amount_usdc": 25000.00,
-  "beneficiary": "GA78...K32P",
-  "relayer_sponsor": "CavosPaymaster"
-}`}
-                </code>
               </div>
             </div>
           )}
@@ -355,7 +334,7 @@ Headers: X-Soroban-Signature: 0x8a92c4b819f7da56e29410...
         </main>
       </div>
 
-      {/* 4. Mobile Bottom Navigation Bar (Stitch Mobile View) */}
+      {/* 4. Mobile Bottom Navigation Bar */}
       <nav 
         className="md:hidden fixed bottom-0 w-full z-50 bg-surface-container-lowest/95 backdrop-blur-xl border-t border-slate-200"
         style={{ backgroundColor: 'rgba(255, 255, 255, 0.94)', backdropFilter: 'blur(16px)' }}
@@ -369,20 +348,8 @@ Headers: X-Soroban-Signature: 0x8a92c4b819f7da56e29410...
             }`}
             style={{ color: activeTab === 'escrow-overview' ? '#ea580c' : undefined }}
           >
-            <span className="material-symbols-outlined text-[24px]">account_balance_wallet</span>
-            <span className="font-label-sm text-label-sm">Escrows</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('milestones')}
-            className={`flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[44px] transition-colors ${
-              activeTab === 'milestones' ? 'font-bold' : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-            style={{ color: activeTab === 'milestones' ? '#ea580c' : undefined }}
-          >
-            <span className="material-symbols-outlined text-[24px]">flag</span>
-            <span className="font-label-sm text-label-sm">Hitos</span>
+            <span className="material-symbols-outlined text-[24px]">dashboard</span>
+            <span className="font-label-sm text-label-sm">Panel</span>
           </button>
 
           <button
@@ -394,7 +361,19 @@ Headers: X-Soroban-Signature: 0x8a92c4b819f7da56e29410...
             style={{ color: activeTab === 'active-contracts' ? '#ea580c' : undefined }}
           >
             <span className="material-symbols-outlined text-[24px]">history_edu</span>
-            <span className="font-label-sm text-label-sm">Contratos</span>
+            <span className="font-label-sm text-label-sm">Acuerdos</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('dispute-center')}
+            className={`flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[44px] transition-colors ${
+              activeTab === 'dispute-center' ? 'font-bold' : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+            style={{ color: activeTab === 'dispute-center' ? '#ea580c' : undefined }}
+          >
+            <span className="material-symbols-outlined text-[24px]">gavel</span>
+            <span className="font-label-sm text-label-sm">Disputas</span>
           </button>
 
           <button
@@ -410,6 +389,8 @@ Headers: X-Soroban-Signature: 0x8a92c4b819f7da56e29410...
           </button>
         </div>
       </nav>
+        </>
+      )}
 
       {/* 5. Modales Funcionales */}
       <CavosAuthModal
