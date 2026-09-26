@@ -1,4 +1,5 @@
 import React from 'react';
+import agreedPayLogo from '../assets/agreedpay-logo.jpeg';
 
 interface WelcomeScreenProps {
   onOpenAuth: () => void;
@@ -12,15 +13,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onOpenAuth }) => {
       <div className="max-w-2xl mx-auto flex flex-col items-center gap-6">
         
         {/* Icon */}
-        <div 
-          className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg"
-          style={{ 
-            backgroundColor: '#ea580c',
-            boxShadow: 'rgba(234, 88, 12, 0.3) 0px 12px 30px -6px'
-          }}
-        >
-          <span className="material-symbols-outlined text-4xl text-white" style={{ fontSize: '40px' }}>shield</span>
-        </div>
+        <img
+          src={agreedPayLogo}
+          alt="AgreedPay"
+          className="w-20 h-20 rounded-2xl object-cover shadow-lg"
+          style={{ boxShadow: 'rgba(234, 88, 12, 0.3) 0px 12px 30px -6px' }}
+        />
 
         {/* Title */}
         <div className="space-y-3">

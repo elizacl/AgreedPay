@@ -1,5 +1,6 @@
 import React from 'react';
 import { UserSession } from '../../types';
+import agreedPayLogo from '../../assets/agreedpay-logo.jpeg';
 
 interface NavbarProps {
   session: UserSession;
@@ -25,12 +26,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         
         {/* Brand */}
         <div className="flex items-center gap-space-sm cursor-pointer select-none">
-          <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center font-headline-sm text-headline-sm font-bold shadow-sm"
-            style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
-          >
-            A
-          </div>
+          <img
+            src={agreedPayLogo}
+            alt="AgreedPay"
+            className="w-8 h-8 rounded-lg object-cover shadow-sm"
+          />
           <span className="font-headline-sm text-headline-sm tracking-tight text-on-surface font-bold">
             AgreedPay
           </span>

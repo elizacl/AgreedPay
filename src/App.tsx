@@ -12,12 +12,14 @@ import { CreateAgreementModal, CreateAgreementInput } from './components/modals/
 import { DisputeModal } from './components/modals/DisputeModal';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { Role, AuthMethod } from './types/ui';
-import { Milestone } from './types/contract';
 import { useCavosAuth } from './hooks/useCavosAuth';
 import { useDeposit } from './hooks/useDeposit';
 import { useSubmitMilestone } from './hooks/useSubmitMilestone';
 import { useApproveMilestone } from './hooks/useApproveMilestone';
 import { useClaimTimeout } from './hooks/useClaimTimeout';
+import { useEscrowContractState } from './hooks/useEscrowContractState';
+import { StepperMilestone } from './components/dashboard/MilestoneStepper';
+import { formatUsdc } from './lib/soroban';
 
 export const App: React.FC = () => {
   const [role, setRole] = useState<Role>('client');
@@ -35,50 +37,40 @@ export const App: React.FC = () => {
   const { execute: approveMilestone } = useApproveMilestone();
   const { execute: claimTimeout } = useClaimTimeout();
 
-  // Active contract milestones ($85,000 USDC)
-  const [milestones, setMilestones] = useState<Milestone[]>([
-    {
-      id: 1,
-      title: 'Arquitectura y Sistema de Diseño UI/UX en Figma',
-      description: 'Wireframes completos, design system con tokens y flujos aprobados.',
-      amount: 15000,
-      status: 'Approved',
-      proofHash: '0x48abc19041289124018240981203984102938401',
-      submittedAt: '2024-10-12',
-    },
-    {
-      id: 2,
-      title: 'Frontend React & Integración de APIs',
-      description: 'Integración cliente REST y autenticación passkey verificada.',
-      amount: 20000,
-      status: 'Approved',
-      proofHash: '0x91d72fa019283019823901840192309XYZ998124',
-      submittedAt: '2024-10-28',
-    },
-    {
-      id: 3,
-      title: 'Despliegue en Staging & Pruebas End-to-End',
-      description: 'Despliegue completado en entorno Vercel Preview. Suite de pruebas Cypress y Playwright ejecutadas.',
-      amount: 25000,
-      status: 'Submitted',
-      proofHash: '0x7f4a8b9e112d7c589b32fa9084',
-      submittedAt: '2024-11-04',
-    },
-    {
-      id: 4,
-      title: 'Entrega de Código Fuente & Despliegue en Producción',
-      description: 'Transferencia de secretos, DNS de dominio principal y setup CI/CD final.',
-      amount: 15000,
-      status: 'Pending',
-    },
-    {
-      id: 5,
-      title: 'Garantía de Soporte & Traspaso de Repositorios',
-      description: 'Periodo de soporte de 30 días posteriores al lanzamiento y handover formal.',
-      amount: 10000,
-      status: 'Pending',
-    },
-  ]);
+  // Estado real del contrato leído vía Soroban RPC (getLedgerEntries), sin mocks
+  const {
+    state: escrowState,
+    lockedBalance,
+    isLoading: isLoadingEscrow,
+    refetch: refetchEscrowState,
+  } = useEscrowContractState({
+    accountAddress: session.address,
+    pollIntervalMs: 8000,
+  });
+
+  const stepperMilestones: StepperMilestone[] = (escrowState?.milestones || []).map((m) => ({
+    id: m.id,
+    status: m.status as StepperMilestone['status'],
+    amountUsdc: Number(formatUsdc(m.amount)),
+    descriptionHash: m.description_hash,
+    submissionTimestamp: m.submission_timestamp,
+  }));
+
+  const totalAmountUsdc = escrowState?.config ? Number(formatUsdc(escrowState.config.total_amount)) : 0;
+  const lockedAmountUsdc = lockedBalance ? Number(lockedBalance.formatted || '0') : 0;
+  const releasedAmountUsdc = Math.max(totalAmountUsdc - lockedAmountUsdc, 0);
+  const completedMilestonesCount = stepperMilestones.filter(
+    (m) => m.status === 'Approved' || m.status === 'TimedOut'
+  ).length;
+  const totalMilestonesCount = escrowState?.milestoneCount || 0;
+  const progressPercent =
+    totalMilestonesCount > 0 ? Math.round((completedMilestonesCount / totalMilestonesCount) * 100) : 0;
+
+  const maskAddress = (addr?: string) => (addr ? `${addr.slice(0, 4)}...${addr.slice(-4)}` : '—');
+  const counterpartyWallet =
+    role === 'client'
+      ? maskAddress(escrowState?.config?.freelancer)
+      : maskAddress(escrowState?.config?.client);
 
   const handleConnect = async (method: AuthMethod) => {
     try {
@@ -115,10 +107,10 @@ export const App: React.FC = () => {
   };
 
   const handleApproveMilestone = async (id: number) => {
-    await approveMilestone({ milestoneId: id, ...getSigner() });
-    setMilestones((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, status: 'Approved' } : m))
-    );
+    const result = await approveMilestone({ milestoneId: id, ...getSigner() });
+    setSuccessToast(`✅ Hito #${id} aprobado on-chain (tx ${result.txHash.slice(0, 8)}...)`);
+    setTimeout(() => setSuccessToast(null), 6000);
+    await refetchEscrowState();
   };
 
   const handleDisputeMilestone = (id: number) => {
@@ -131,27 +123,36 @@ export const App: React.FC = () => {
 
   const handleSubmitWork = async (id: number) => {
     const proofHash = await createDescriptionHash(`deliverable:${id}:${new Date().toISOString()}`);
-    await submitMilestone({ milestoneId: id, proofHash, ...getSigner() });
-    setMilestones((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, status: 'Submitted', proofHash } : m
-      )
-    );
+    const result = await submitMilestone({ milestoneId: id, proofHash, ...getSigner() });
+    setSuccessToast(`✅ Entregable del hito #${id} enviado (tx ${result.txHash.slice(0, 8)}...)`);
+    setTimeout(() => setSuccessToast(null), 6000);
+    await refetchEscrowState();
   };
 
   const handleClaimTimeout = async (id: number) => {
-    await claimTimeout({ milestoneId: id, ...getSigner() });
-    setMilestones((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, status: 'Approved' } : m))
-    );
+    const result = await claimTimeout({ milestoneId: id, ...getSigner() });
+    setSuccessToast(`✅ Timeout reclamado para hito #${id} (tx ${result.txHash.slice(0, 8)}...)`);
+    setTimeout(() => setSuccessToast(null), 6000);
+    await refetchEscrowState();
   };
 
   const handleCreateAgreement = async (data: CreateAgreementInput) => {
-    const descriptionHash = await createDescriptionHash(`${data.title}:${data.freelancerAddress}`);
-    await deposit({
-      milestones: [{ amount: data.totalAmount, descriptionHash }],
+    // Divide el monto total en 3 hitos iguales para poblar el contrato con múltiples estados demostrables
+    const parts = 3;
+    const perMilestone = Math.floor((data.totalAmount / parts) * 100) / 100;
+    const milestonesInput = await Promise.all(
+      Array.from({ length: parts }, async (_, i) => ({
+        amount: perMilestone,
+        descriptionHash: await createDescriptionHash(`${data.title}:${data.freelancerAddress}:milestone-${i}`),
+      }))
+    );
+    const result = await deposit({
+      milestones: milestonesInput,
       ...getSigner(),
     });
+    setSuccessToast(`✅ Escrow fondeado con ${parts} hitos (tx ${result.txHash.slice(0, 8)}...)`);
+    setTimeout(() => setSuccessToast(null), 6000);
+    await refetchEscrowState();
   };
 
   return (
@@ -227,27 +228,30 @@ export const App: React.FC = () => {
                 onOpenVault={() => alert('Bóveda de Garantía: $85,000 USDC bloqueados en Soroban')}
               />
 
-              {/* 4 Tarjetas KPI Superiores (Brex Metrics) */}
+              {/* 4 Tarjetas KPI Superiores (Brex Metrics) — datos reales vía getLedgerEntries */}
               <ContractMetrics
-                totalAmount={85000}
-                releasedAmount={25000}
-                lockedAmount={60000}
-                progressPercent={60}
-                milestonesCompleted={3}
-                totalMilestones={5}
-                antiLockupDays={11}
-                counterpartyName="Acme Corp"
-                counterpartyTag="Venture Studio Dev"
-                counterpartyWallet="GA78...K32P"
+                totalAmount={totalAmountUsdc}
+                releasedAmount={releasedAmountUsdc}
+                lockedAmount={lockedAmountUsdc}
+                progressPercent={progressPercent}
+                milestonesCompleted={completedMilestonesCount}
+                totalMilestones={totalMilestonesCount}
+                antiLockupDays={14}
+                counterpartyName={role === 'client' ? 'Freelancer' : 'Cliente'}
+                counterpartyTag="Stellar Testnet"
+                counterpartyWallet={counterpartyWallet}
               />
 
               {/* Cuadrícula de 2 Columnas (7 cols Timeline Hitos + 5 cols Entregables & Firmantes) */}
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
-                
+
                 {/* 7 Columnas: Rastreador de Hitos */}
                 <div className="xl:col-span-7">
                   <MilestoneStepper
                     role={role}
+                    milestones={stepperMilestones}
+                    isLoading={isLoadingEscrow}
+                    contractId={escrowState?.contractId}
                     onApprove={handleApproveMilestone}
                     onDispute={handleDisputeMilestone}
                     onSubmitWork={handleSubmitWork}
