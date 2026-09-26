@@ -83,12 +83,19 @@ cd AgreedPay
 npm install
 ```
 
-### 2. Configurar variables de entorno
+### 2a. Opción rápida — demo 100% automática (recomendada para probar sin mí)
+No necesitas Freighter, ni cuentas propias, ni que nadie del equipo esté presente. Un solo comando:
+```bash
+npm run demo:testnet
+```
+Esto genera y fondea 3 cuentas nuevas de Testnet (cliente, freelancer, árbitro), despliega una instancia nueva del contrato ya auditado, ejecuta un flujo real de principio a fin (depósito → entrega → aprobación → prórroga de revisión → disputa resuelta) y escribe automáticamente el `.env.local` apuntando a ese contrato. Al terminar, solo falta `npm run dev` — verás el Dashboard leer datos 100% reales de esa instancia. Tarda menos de un minuto y todas las transacciones quedan verificables en Stellar Expert (el script imprime el link exacto).
+
+### 2b. Opción manual — configurar variables de entorno
 ```bash
 cp .env.example .env.local
 # Edita .env.local si vas a apuntar a tu propia instancia del contrato
 ```
-Como mínimo necesitas `VITE_ESCROW_CONTRACT_ID`, `VITE_USDC_SAC_CONTRACT_ID` (o el SAC del token que uses) y `VITE_STELLAR_RPC_URL` (por defecto, el RPC público de testnet).
+Como mínimo necesitas `VITE_ESCROW_CONTRACT_ID`, `VITE_USDC_SAC_CONTRACT_ID` (o el SAC del token que uses) y `VITE_STELLAR_RPC_URL` (por defecto, el RPC público de testnet). Con esta opción, para depositar/aprobar hitos sí necesitas Freighter conectado.
 
 ### 3. Levantar el frontend en desarrollo
 ```bash

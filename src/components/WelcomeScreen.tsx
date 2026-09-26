@@ -1,5 +1,6 @@
 import React from 'react';
 import agreedPayLogo from '../assets/agreedpay-logo.jpeg';
+import { LiveDemoRunner } from './LiveDemoRunner';
 
 interface WelcomeScreenProps {
   onOpenAuth: () => void;
@@ -53,6 +54,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onOpenAuth }) => {
           </button>
         </div>
       </div>
+
+      {/* Demo real sin wallet, para jurados / demo desatendida */}
+      <LiveDemoRunner />
 
       {/* How it works */}
       <div className="max-w-3xl mx-auto mt-16 w-full">
